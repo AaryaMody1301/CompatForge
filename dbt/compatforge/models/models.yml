@@ -39,3 +39,125 @@ models:
           - accepted_values:
               arguments:
                 values: ['usb.ids']
+  - name: stg_evidence_run_metadata
+    description: Deterministic reference time used for evidence freshness calculations.
+    columns:
+      - name: as_of
+        data_tests: [not_null, unique]
+  - name: stg_compatibility_observations
+    description: Validated configuration-grain observations loaded into DuckDB Bronze.
+    columns:
+      - name: observation_id
+        data_tests: [not_null, unique]
+      - name: device_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_usb_devices')
+                field: device_id
+      - name: architecture
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['x86_64', 'arm64']
+      - name: os_family
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['windows', 'macos', 'ubuntu']
+      - name: outcome
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['works', 'works_with_conditions', 'fails']
+      - name: record_sha256
+        data_tests: [not_null, unique]
+  - name: stg_support_statements
+    description: Validated scoped support statements loaded into DuckDB Bronze.
+    columns:
+      - name: statement_id
+        data_tests: [not_null, unique]
+      - name: device_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_usb_devices')
+                field: device_id
+      - name: support_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['supported', 'supported_with_conditions', 'unsupported']
+      - name: record_sha256
+        data_tests: [not_null, unique]
+  - name: int_evidence_freshness
+    description: Evidence age and deterministic freshness classification relative to the snapshot as-of time.
+    columns:
+      - name: evidence_id
+        data_tests: [not_null, unique]
+      - name: freshness_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['fresh', 'aging', 'stale']
+  - name: dim_hosts
+    description: Normalized host models observed in exact compatibility reports.
+    columns:
+      - name: host_key
+        data_tests: [not_null, unique]
+  - name: dim_operating_systems
+    description: Normalized observed operating-system versions/builds.
+    columns:
+      - name: os_key
+        data_tests: [not_null, unique]
+  - name: dim_drivers
+    description: Normalized driver identities found in observations or support statements.
+    columns:
+      - name: driver_key
+        data_tests: [not_null, unique]
+  - name: dim_software
+    description: Normalized supporting software identities found in evidence.
+    columns:
+      - name: software_key
+        data_tests: [not_null, unique]
+  - name: dim_connection_paths
+    description: Normalized observed connection signatures and support connection scopes.
+    columns:
+      - name: connection_key
+        data_tests: [not_null, unique]
+  - name: fact_compatibility_observations
+    description: Publicly exportable observation facts with dimension keys and freshness metadata.
+    columns:
+      - name: observation_id
+        data_tests: [not_null, unique]
+      - name: device_id
+        data_tests: [not_null]
+      - name: freshness_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['fresh', 'aging', 'stale']
+  - name: fact_support_statements
+    description: Publicly exportable scoped support facts with dimension keys and freshness metadata.
+    columns:
+      - name: statement_id
+        data_tests: [not_null, unique]
+      - name: device_id
+        data_tests: [not_null]
+      - name: freshness_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['fresh', 'aging', 'stale']
+  - name: evidence_coverage
+    description: Per-device evidence coverage metrics used to expose unknown and under-documented areas.
+    columns:
+      - name: device_id
+        data_tests: [not_null, unique]
+      - name: coverage_state
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['observed_and_supported', 'observed_only', 'support_only', 'unknown']

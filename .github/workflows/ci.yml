@@ -34,18 +34,22 @@ jobs:
       - name: Test
         run: pytest -q
 
-      - name: Validate public fixtures and reviewed support evidence
-        run: python -m compatforge_pipeline.validate data/fixtures data/evidence/vendor
+      - name: Validate synthetic and reviewed evidence
+        run: >-
+          python -m compatforge_pipeline.validate
+          data/fixtures
+          data/evidence/vendor
+          data/evidence/observations
 
       - name: Resolver smoke test
         run: >-
           python -m compatforge_pipeline.resolver
           --query tests/queries/saleae-win11-x64.json
-          --observations data/fixtures
+          --observations data/evidence/observations
           --support data/evidence/vendor
 
   data-platform:
-    name: Deterministic identity snapshot
+    name: Deterministic identity and evidence snapshots
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,54 +63,82 @@ jobs:
       - name: Install data stack
         run: python -m pip install -e ".[dev,data]"
 
-      - name: Build first bronze snapshot
+      - name: Build first identity Bronze snapshot
         run: >-
           python -m compatforge_pipeline.identity_pipeline bronze
-          --workspace build/identity-a
+          --workspace build/platform-a
           --input tests/fixtures/usb.ids
           --retrieved-at 2026-01-01T00:00:00Z
           --source-url synthetic://tests/fixtures/usb.ids
 
-      - name: Transform first snapshot with dbt
+      - name: Ingest first evidence snapshot
+        run: >-
+          python -m compatforge_pipeline.evidence_pipeline ingest
+          --workspace build/platform-a
+          --observations tests/fixtures/evidence/observations
+          --support tests/fixtures/evidence/support
+          --as-of 2026-09-07T00:00:00Z
+
+      - name: Transform first platform with dbt
         env:
-          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/identity-a/compatforge.duckdb
+          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/platform-a/compatforge.duckdb
         run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
 
-      - name: Export first public snapshot
-        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/identity-a
+      - name: Export first identity snapshot
+        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/platform-a
 
-      - name: Build second bronze snapshot
+      - name: Export first evidence snapshot
+        run: python -m compatforge_pipeline.evidence_pipeline snapshot --workspace build/platform-a
+
+      - name: Build second identity Bronze snapshot
         run: >-
           python -m compatforge_pipeline.identity_pipeline bronze
-          --workspace build/identity-b
+          --workspace build/platform-b
           --input tests/fixtures/usb.ids
           --retrieved-at 2026-01-01T00:00:00Z
           --source-url synthetic://tests/fixtures/usb.ids
 
-      - name: Transform second snapshot with dbt
+      - name: Ingest second evidence snapshot
+        run: >-
+          python -m compatforge_pipeline.evidence_pipeline ingest
+          --workspace build/platform-b
+          --observations tests/fixtures/evidence/observations
+          --support tests/fixtures/evidence/support
+          --as-of 2026-09-07T00:00:00Z
+
+      - name: Transform second platform with dbt
         env:
-          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/identity-b/compatforge.duckdb
+          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/platform-b/compatforge.duckdb
         run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
 
-      - name: Export second public snapshot
-        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/identity-b
+      - name: Export second identity snapshot
+        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/platform-b
 
-      - name: Verify deterministic output
+      - name: Export second evidence snapshot
+        run: python -m compatforge_pipeline.evidence_pipeline snapshot --workspace build/platform-b
+
+      - name: Verify deterministic identity output
         run: >-
           python -m compatforge_pipeline.identity_pipeline verify
-          build/identity-a/public/snapshot_manifest.json
-          build/identity-b/public/snapshot_manifest.json
+          build/platform-a/public/snapshot_manifest.json
+          build/platform-b/public/snapshot_manifest.json
+
+      - name: Verify deterministic evidence output
+        run: >-
+          python -m compatforge_pipeline.evidence_pipeline verify
+          build/platform-a/public/evidence/snapshot_manifest.json
+          build/platform-b/public/evidence/snapshot_manifest.json
 
       - name: Run data-layer tests
-        run: pytest -q tests/test_identity_pipeline.py
+        run: pytest -q tests/test_identity_pipeline.py tests/test_evidence_pipeline.py
 
-      - name: Upload reviewed synthetic snapshot
+      - name: Upload reviewed synthetic platform snapshot
         uses: actions/upload-artifact@v7
         with:
-          name: compatforge-synthetic-identity-snapshot
+          name: compatforge-synthetic-platform-snapshot
           path: |
-            build/identity-a/manifests/source_manifest.json
-            build/identity-a/public/
+            build/platform-a/manifests/
+            build/platform-a/public/
           retention-days: 7
 
   web:
