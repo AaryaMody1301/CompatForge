@@ -1,0 +1,11 @@
+{
+  "name": "usb.ids",
+  "homepage": "https://usb-ids.gowdy.us/",
+  "download_url": "https://usb-ids.gowdy.us/usb.ids.gz",
+  "format": "usb.ids.gz",
+  "license": "GPL-2.0-or-later OR BSD-3-Clause",
+  "upstream_snapshot_cadence": "daily",
+  "compatforge_refresh_policy": "at most once per day",
+  "parser_version": "1",
+  "user_agent": "CompatForge/0.2 (+https://github.com/AaryaMody1301/CompatForge)"
+}
