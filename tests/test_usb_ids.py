@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from compatforge_pipeline.usb_ids import UsbIdsParseError, parse_usb_ids
 
 FIXTURE = Path(__file__).parent / "fixtures" / "usb.ids"
