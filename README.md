@@ -2,11 +2,11 @@
 
 Evidence-first hardware compatibility intelligence.
 
-CompatForge is being built to answer a narrow but difficult question:
+CompatForge answers a narrow but difficult question:
 
 > Will this peripheral work with this host, operating system, architecture, driver, firmware, and connection path - and what evidence supports that answer?
 
-The project treats compatibility as a configuration-level evidence problem rather than a binary device-to-laptop lookup. Missing evidence stays `UNKNOWN`; conflicting evidence stays visible; source observations are never rewritten into stronger claims than they support.
+The project treats compatibility as a configuration-level evidence problem rather than a binary device-to-laptop lookup. Missing evidence stays `UNKNOWN`; conflicting evidence stays visible; vendor support is never rewritten into a reproduced success.
 
 ## Current build status
 
@@ -14,9 +14,9 @@ The project treats compatibility as a configuration-level evidence problem rathe
 
 **Phase 2 - hardware identity data platform:** complete. The repository has reviewed USB identity ingestion, content-addressed raw snapshots, source manifests, Bronze Parquet/DuckDB tables, dbt staging/intermediate/mart models, deterministic public snapshot export, and scheduled refresh candidates.
 
-**Phase 3A - evidence semantics and deterministic resolver:** complete.
+**Phase 3 - compatibility evidence and resolver:** complete. Reviewed support statements and observations flow through DuckDB/dbt evidence models, deterministic freshness/coverage marts, public evidence snapshots, and a resolver that keeps observed compatibility separate from vendor support.
 
-**Phase 3B - normalized evidence data platform:** in review. The branch adds DuckDB evidence ingestion, normalized dbt evidence dimensions/facts, deterministic freshness and coverage models, reviewed real-world evidence, and reproducible JSONL/Parquet evidence snapshots.
+**Phase 4 - public web MVP:** active. The Next.js app now has device search, device evidence pages, a configuration checker, evidence timelines, corpus coverage, and methodology pages. Deployment is the remaining Phase 4 gate.
 
 ## Initial scope
 
@@ -25,7 +25,7 @@ The first public compatibility release focuses on developer and engineering USB 
 ## Repository layout
 
 ```text
-apps/web/                     Next.js product shell
+apps/web/                     Next.js public product
 pipeline/compatforge_pipeline Python identity/evidence tooling
 dbt/compatforge/               DuckDB/dbt identity + evidence transformations
 data/sources/                  reviewed upstream-source contracts
@@ -34,7 +34,7 @@ data/fixtures/                 public synthetic contract fixtures
 tests/fixtures/evidence/       synthetic evidence pipeline fixtures
 schemas/                       public JSON Schema contracts
 tests/                         contract, resolver, and pipeline tests
-docs/                          architecture, data, evidence, privacy, roadmap
+docs/                          architecture, evidence, web, privacy, roadmap
 .github/workflows/             CI and reviewed refresh workflows
 ```
 
@@ -72,7 +72,7 @@ python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/loca
 python -m compatforge_pipeline.evidence_pipeline snapshot --workspace build/local
 ```
 
-See [`docs/EVIDENCE_DATA_PLATFORM.md`](docs/EVIDENCE_DATA_PLATFORM.md) for the Bronze -> dbt -> public snapshot design.
+See [`docs/EVIDENCE_DATA_PLATFORM.md`](docs/EVIDENCE_DATA_PLATFORM.md).
 
 ## Resolve a compatibility query
 
@@ -83,11 +83,9 @@ python -m compatforge_pipeline.resolver \
   --support data/evidence/vendor
 ```
 
-The resolver returns two separate answers: an observed claim and a vendor/support state. Vendor documentation can produce `supported`, but it cannot manufacture an observed `works` result.
+The resolver returns two separate answers: an observed claim and a vendor/support state.
 
-See [`docs/RESOLVER.md`](docs/RESOLVER.md) and [`docs/EVIDENCE_MODEL.md`](docs/EVIDENCE_MODEL.md).
-
-## Run the web shell
+## Run the public web MVP
 
 From `apps/web`:
 
@@ -95,6 +93,8 @@ From `apps/web`:
 npm ci
 npm run dev
 ```
+
+The web app imports the reviewed JSON evidence directly from `data/evidence/`; it does not require a live database or paid API. See [`docs/WEB_MVP.md`](docs/WEB_MVP.md).
 
 ## Project principles
 

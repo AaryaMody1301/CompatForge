@@ -28,45 +28,41 @@ Status: **complete**.
 
 ## Phase 3 - Compatibility evidence and resolver
 
-Status: **active**.
-
-### Phase 3A - evidence semantics and deterministic resolver
-
 Status: **complete**.
 
-- separate exact observations from scoped vendor/support statements;
-- add reviewed Saleae and FTDI support records from official documentation;
-- preserve observed claim states without converting vendor support into `works`;
-- exact-match resolution;
-- explicit host and OS-version relaxation tiers;
+- separate observations from scoped vendor/support statements;
+- reviewed Saleae and FTDI support evidence;
+- reviewed real-world FT232R/Windows ARM64 reproduction with explicit unknown topology;
+- exact, host-relaxed, and OS-version-relaxed observation resolution;
 - deterministic conflict handling;
-- claim-to-observation and support-to-source provenance;
-- CLI and regression tests.
-
-### Phase 3B - normalized evidence data platform
-
-Status: **implementation in review**.
-
-- ingest observations/support statements into DuckDB;
-- normalize host, OS, driver, software, and connection dimensions with dbt;
+- DuckDB evidence ingestion;
+- normalized dbt host/OS/driver/software/connection dimensions and fact tables;
 - deterministic freshness/staleness models;
-- preserve reviewed real-world reproductions without inventing missing connection topology;
-- deterministic evidence snapshot export to JSONL/Parquet;
+- deterministic evidence snapshot export;
 - per-device coverage metrics;
 - double-build evidence reproducibility CI.
 
-Phase 3 is complete once Phase 3B is merged with all data-contract, dbt, reproducibility, resolver, and web gates green.
-
 ## Phase 4 - Public web MVP
 
-- device catalog/search;
-- configuration builder;
-- compatibility result pages;
-- evidence timelines;
-- methodology/coverage pages;
-- preview and production deployment.
+Status: **active**.
 
-Target: first stable read-only `v0.1.0`.
+Implemented in the Phase 4 branch:
+
+- searchable device catalog;
+- static device evidence pages;
+- native-form configuration checker;
+- separate observed-compatibility and vendor-support results;
+- explicit resolver-relaxation labels;
+- evidence sources and device timelines;
+- coverage and methodology pages;
+- responsive/accessibility-focused UI without a component library or client-state dependency.
+
+Remaining merge/release gates:
+
+- Next.js lint, TypeScript, and production build green in CI;
+- preview deployment verified;
+- merge Phase 4;
+- tag the first read-only public release candidate before `v0.1.0`.
 
 ## Phase 5 - Local diagnostic agent
 
