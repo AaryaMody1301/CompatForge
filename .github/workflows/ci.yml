@@ -1,0 +1,80 @@
+name: CompatForge CI
+
+on:
+  push:
+    branches:
+      - main
+      - "phase-*"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Python contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check pipeline tests
+
+      - name: Test
+        run: pytest -q
+
+      - name: Validate public fixtures
+        run: python -m compatforge_pipeline.validate data/fixtures
+
+  web:
+    name: Next.js web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Generate lockfile when bootstrapping
+        if: ${{ hashFiles('apps/web/package-lock.json') == '' }}
+        run: |
+          npm install --package-lock-only --ignore-scripts
+          cp package-lock.json package-lock.generated.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Production build
+        run: npm run build
+
+      - name: Upload generated lockfile for Phase 1 review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compatforge-web-package-lock
+          path: apps/web/package-lock.generated.json
+          if-no-files-found: ignore
+          retention-days: 7
