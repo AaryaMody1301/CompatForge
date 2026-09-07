@@ -1,0 +1,17 @@
+name: compatforge
+version: "0.2.0"
+config-version: 2
+profile: compatforge
+
+model-paths: ["models"]
+test-paths: ["tests"]
+clean-targets: ["target", "dbt_packages", "logs"]
+
+models:
+  compatforge:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table

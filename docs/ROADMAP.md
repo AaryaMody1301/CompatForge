@@ -2,6 +2,8 @@
 
 ## Phase 1 - Foundation and data contracts
 
+Status: **complete**.
+
 - repository architecture and scope;
 - canonical USB identities;
 - device and observation JSON Schemas;
@@ -11,16 +13,20 @@
 - initial Next.js shell;
 - CI and dependency lock review.
 
-Merge gate: contracts are tested, web build is green, dependency graph is locked, and no real compatibility claim is published.
-
 ## Phase 2 - Hardware identity data platform
 
+Status: **completion in progress**.
+
 - reviewed USB registry ingestion;
-- raw-source manifests with hashes/licenses/timestamps;
-- normalization and source-freshness checks;
-- DuckDB analytical layer;
-- dbt staging/intermediate/mart models;
-- deterministic data snapshot build.
+- content-addressed raw-source manifests with hashes/licenses/timestamps;
+- deterministic normalization;
+- Bronze Parquet and DuckDB analytical layer;
+- dbt staging/intermediate/mart models and tests;
+- deterministic JSONL/Parquet public identity snapshot;
+- scheduled read-only refresh candidate workflow;
+- double-build reproducibility gate in CI.
+
+Merge gate: the full synthetic pipeline, dbt tests, deterministic double-build comparison, Python contracts, and web build must all be green.
 
 ## Phase 3 - Compatibility evidence and resolver
 
