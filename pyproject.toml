@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compatforge-hw-pipeline"
-version = "0.3.0b1"
+version = "0.3.0b2"
 description = "Evidence and identity contract tooling for CompatForge hardware compatibility data"
 requires-python = ">=3.13"
 license = {text = "MIT"}
@@ -30,9 +30,14 @@ compatforge-identity = "compatforge_pipeline.identity_pipeline:main"
 compatforge-resolve = "compatforge_pipeline.resolver:main"
 compatforge-evidence = "compatforge_pipeline.evidence_pipeline:main"
 compatforge-diagnose = "compatforge_pipeline.diagnostics:main"
+compatforge-snapshot = "compatforge_pipeline.local_snapshot:main"
+compatforge-explain = "compatforge_pipeline.local_explain:main"
 
 [tool.setuptools.packages.find]
 where = ["pipeline"]
+
+[tool.setuptools.package-data]
+compatforge_pipeline = ["resources/*.json"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"

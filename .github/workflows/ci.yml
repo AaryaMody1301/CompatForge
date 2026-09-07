@@ -48,6 +48,19 @@ jobs:
           --observations data/evidence/observations
           --support data/evidence/vendor
 
+      - name: Verify packaged local snapshot
+        run: >-
+          compatforge-snapshot verify
+          --observations data/evidence/observations
+          --support data/evidence/vendor
+
+      - name: Local explanation smoke test
+        run: |
+          compatforge-explain \
+            --diagnostic data/fixtures/diagnostic_manifest.json \
+            --output build/local-explanation.json
+          compatforge-validate build/local-explanation.json
+
   diagnostic-agent:
     name: Diagnostic agent (${{ matrix.os }})
     strategy:
@@ -72,6 +85,9 @@ jobs:
 
       - name: Validate diagnostic contract
         run: python -m compatforge_pipeline.validate build/diagnostic.json
+
+      - name: Load packaged local snapshot
+        run: compatforge-snapshot info
 
   data-platform:
     name: Deterministic identity and evidence snapshots

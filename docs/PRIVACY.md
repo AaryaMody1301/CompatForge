@@ -17,13 +17,31 @@ The diagnostic agent is local-only and allowlist-based. It excludes from the gen
 - IP addresses;
 - Wi-Fi identifiers;
 - filesystem paths containing user identity;
+- raw Windows PnP instance IDs;
+- raw USB topology paths;
 - unrelated connected-device inventory.
 
 The CLI requires either a specific target USB VID/PID or `--host-only`. There is deliberately no default full-device inventory mode.
 
 The manifest contains explicit privacy flags stating that it is local-only, contains no serial/network identifiers, contains no unrelated USB inventory, and performs no automatic upload. Users can inspect the exact JSON before any future contribution workflow is introduced.
 
-On macOS, the native System Information command can return more local fields than CompatForge needs. The parser uses a strict allowlist and only transfers target VID/PID presence into the manifest; extra native-command fields are discarded and never logged or written by CompatForge. Linux avoids opening USB serial attributes entirely. Windows filters the target VID/PID inside PowerShell before returning JSON and does not return raw PnP instance IDs.
+## Driver metadata boundary
+
+Phase 5B permits only target-scoped driver metadata that is useful to compatibility diagnosis:
+
+- driver name/description;
+- driver provider when the OS exposes it safely;
+- driver version when the OS exposes it safely.
+
+Windows performs VID/PID filtering inside PowerShell before any driver properties are returned, and raw PnP instance IDs never enter the manifest. Linux emits only a driver symlink basename and optional module version; it does not emit the sysfs path. macOS driver metadata remains unavailable rather than broadening collection into system-extension or I/O Registry inventories.
+
+A driver string containing control characters or exceeding the collector's bounded metadata length is discarded.
+
+## Local snapshot and resolver
+
+The packaged compatibility snapshot contains reviewed public evidence, not private machine data. `compatforge-explain` consumes an already inspectable diagnostic manifest and the packaged snapshot entirely locally. It performs no network call and no upload.
+
+The derived explanation is a separate record from the diagnostic manifest. This keeps locally observed machine facts separate from compatibility claims and source evidence.
 
 ## Future submission boundary
 

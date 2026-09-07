@@ -30,6 +30,9 @@ def test_windows_parser_emits_only_safe_allowlisted_fields() -> None:
                 "vendor_id": "0403",
                 "product_id": "6001",
                 "status": "OK",
+                "driver_name": "FTDI USB Serial Port",
+                "driver_provider": "FTDI",
+                "driver_version": "2.12.36.20A",
                 "serial_number": "DO-NOT-LEAK",
                 "instance_id": "USB\\VID_0403&PID_6001\\DO-NOT-LEAK",
             }
@@ -42,6 +45,13 @@ def test_windows_parser_emits_only_safe_allowlisted_fields() -> None:
             "device_id": "usb:0403:6001",
             "connection_path": "unspecified",
             "status": "OK",
+            "drivers": [
+                {
+                    "name": "FTDI USB Serial Port",
+                    "provider": "FTDI",
+                    "version": "2.12.36.20A",
+                }
+            ],
         }
     ]
     assert "DO-NOT-LEAK" not in json.dumps(matches)
@@ -70,21 +80,39 @@ def test_macos_parser_drops_serial_and_unrelated_devices() -> None:
     assert "1234" not in json.dumps(matches)
 
 
-def test_linux_collector_reads_safe_target_fields_only(tmp_path: Path) -> None:
-    target = tmp_path / "1-2.3"
+def test_linux_collector_reads_safe_target_and_driver_fields_only(tmp_path: Path) -> None:
+    sysfs_root = tmp_path / "usb"
+    sysfs_root.mkdir()
+    target = sysfs_root / "1-2.3"
     target.mkdir()
     (target / "idVendor").write_text("0403\n", encoding="utf-8")
     (target / "idProduct").write_text("6001\n", encoding="utf-8")
     (target / "speed").write_text("480\n", encoding="utf-8")
     (target / "serial").write_text("DO-NOT-LEAK\n", encoding="utf-8")
 
-    other = tmp_path / "1-4"
+    interface = sysfs_root / "1-2.3:1.0"
+    interface.mkdir()
+    driver_target = tmp_path / "drivers" / "ftdi_sio"
+    driver_target.mkdir(parents=True)
+    (interface / "driver").symlink_to(driver_target, target_is_directory=True)
+
+    module_root = tmp_path / "modules"
+    module = module_root / "ftdi_sio"
+    module.mkdir(parents=True)
+    (module / "version").write_text("1.2.3\n", encoding="utf-8")
+
+    other = sysfs_root / "1-4"
     other.mkdir()
     (other / "idVendor").write_text("1234\n", encoding="utf-8")
     (other / "idProduct").write_text("5678\n", encoding="utf-8")
     (other / "serial").write_text("OTHER-SECRET\n", encoding="utf-8")
 
-    matches, count = _collect_linux_target("0403", "6001", sysfs_root=tmp_path)
+    matches, count = _collect_linux_target(
+        "0403",
+        "6001",
+        sysfs_root=sysfs_root,
+        module_root=module_root,
+    )
     assert count == 1
     assert matches == [
         {
@@ -92,6 +120,7 @@ def test_linux_collector_reads_safe_target_fields_only(tmp_path: Path) -> None:
             "connection_path": "usb_hub",
             "status": "present",
             "speed_mbps": 480.0,
+            "drivers": [{"name": "ftdi_sio", "version": "1.2.3"}],
         }
     ]
     rendered = json.dumps(matches)
@@ -119,7 +148,13 @@ def test_collect_diagnostic_validates_and_never_uploads(monkeypatch) -> None:
         diagnostics,
         "_collect_target",
         lambda system_name, vid, pid: (
-            [{"device_id": "usb:0403:6001", "connection_path": "unspecified"}],
+            [
+                {
+                    "device_id": "usb:0403:6001",
+                    "connection_path": "unspecified",
+                    "drivers": [{"name": "FTDI VCP", "version": "2.12.36.20A"}],
+                }
+            ],
             1,
         ),
     )
@@ -130,6 +165,8 @@ def test_collect_diagnostic_validates_and_never_uploads(monkeypatch) -> None:
         generated_at="2026-09-07T00:00:00Z",
     )
     validate_document(manifest)
+    assert manifest["schema_version"] == "1.1.0"
     assert manifest["target"]["present"] is True
+    assert manifest["target"]["driver_metadata_status"] == "collected"
     assert manifest["privacy"]["automatic_upload"] is False
     assert manifest["privacy"]["unrelated_usb_devices_in_manifest"] is False

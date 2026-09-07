@@ -16,7 +16,7 @@
   ],
   "properties": {
     "record_type": {"const": "diagnostic_manifest"},
-    "schema_version": {"const": "1.0.0"},
+    "schema_version": {"const": "1.1.0"},
     "agent": {
       "type": "object",
       "additionalProperties": false,
@@ -57,6 +57,7 @@
         "collection_status",
         "present",
         "match_count",
+        "driver_metadata_status",
         "matches"
       ],
       "properties": {
@@ -67,6 +68,9 @@
         "collection_status": {"enum": ["collected", "unavailable"]},
         "present": {"type": ["boolean", "null"]},
         "match_count": {"type": "integer", "minimum": 0},
+        "driver_metadata_status": {
+          "enum": ["collected", "partial", "unavailable", "not_observed"]
+        },
         "matches": {
           "type": "array",
           "items": {
@@ -82,7 +86,21 @@
                 "enum": ["direct_port", "usb_hub", "unspecified"]
               },
               "status": {"type": "string", "minLength": 1},
-              "speed_mbps": {"type": "number", "minimum": 0}
+              "speed_mbps": {"type": "number", "minimum": 0},
+              "drivers": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "minProperties": 1,
+                  "properties": {
+                    "name": {"type": "string", "minLength": 1},
+                    "provider": {"type": "string", "minLength": 1},
+                    "version": {"type": "string", "minLength": 1}
+                  }
+                }
+              }
             }
           }
         }

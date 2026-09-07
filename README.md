@@ -16,7 +16,9 @@ The project treats compatibility as a configuration-level evidence problem rathe
 
 **Phase 3 - compatibility evidence and resolver:** complete. Reviewed support statements and observations flow through DuckDB/dbt evidence models, deterministic freshness/coverage marts, public evidence snapshots, and a resolver that keeps observed compatibility separate from vendor support.
 
-**Phase 4 - public web MVP:** active. The Next.js app now has device search, device evidence pages, a configuration checker, evidence timelines, corpus coverage, and methodology pages. Deployment is the remaining Phase 4 gate.
+**Phase 4 - public web MVP:** complete and deployed on Vercel.
+
+**Phase 5 - local diagnostic agent:** active. Phase 5A established privacy-first cross-platform collection. Phase 5B adds target-scoped driver context, a deterministic packaged compatibility snapshot, and offline resolver explanations.
 
 ## Initial scope
 
@@ -26,14 +28,14 @@ The first public compatibility release focuses on developer and engineering USB 
 
 ```text
 apps/web/                     Next.js public product
-pipeline/compatforge_pipeline Python identity/evidence tooling
+pipeline/compatforge_pipeline Python identity/evidence/local-agent tooling
 dbt/compatforge/               DuckDB/dbt identity + evidence transformations
 data/sources/                  reviewed upstream-source contracts
 data/evidence/                 reviewed support statements and observations
 data/fixtures/                 public synthetic contract fixtures
 tests/fixtures/evidence/       synthetic evidence pipeline fixtures
 schemas/                       public JSON Schema contracts
-tests/                         contract, resolver, and pipeline tests
+tests/                         contract, resolver, diagnostic, and pipeline tests
 docs/                          architecture, evidence, web, privacy, roadmap
 .github/workflows/             CI and reviewed refresh workflows
 ```
@@ -84,6 +86,22 @@ python -m compatforge_pipeline.resolver \
 ```
 
 The resolver returns two separate answers: an observed claim and a vendor/support state.
+
+## Run the local diagnostic workflow
+
+```bash
+compatforge-diagnose \
+  --device usb:0403:6001 \
+  --output compatforge-diagnostic.json
+
+compatforge-explain \
+  --diagnostic compatforge-diagnostic.json \
+  --output compatforge-explanation.json
+
+compatforge-snapshot info
+```
+
+Both commands run locally. The diagnostic manifest contains allowlisted machine facts; the explanation is a separate derived record backed by the packaged reviewed snapshot. Neither command uploads data. See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md).
 
 ## Run the public web MVP
 

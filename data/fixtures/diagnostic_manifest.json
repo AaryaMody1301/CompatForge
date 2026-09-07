@@ -1,6 +1,6 @@
 {
   "record_type": "diagnostic_manifest",
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "agent": {
     "name": "compatforge-diagnose",
     "version": "synthetic-test"
@@ -21,6 +21,7 @@
     "collection_status": "collected",
     "present": true,
     "match_count": 1,
+    "driver_metadata_status": "unavailable",
     "matches": [
       {
         "device_id": "usb:0403:6001",
