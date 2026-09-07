@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_support_statement",
+  "statement_id": "sup_saleae_lp8_macos_x64",
+  "device_id": "usb:21A9:1005",
+  "scope": {
+    "architecture": "x86_64",
+    "operating_system": {
+      "family": "macos",
+      "version_mode": "minimum",
+      "minimum_version": "12"
+    },
+    "connection": {
+      "kind": "any_usb",
+      "minimum_usb_generation": "2.0"
+    }
+  },
+  "software": {"name": "Saleae Logic 2"},
+  "support_status": "supported_with_conditions",
+  "conditions": [
+    "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance."
+  ],
+  "evidence": {
+    "source_type": "vendor_documentation",
+    "sources": [
+      {
+        "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems",
+        "source_title": "Supported Operating Systems | Saleae"
+      },
+      {
+        "source_url": "https://www.saleae.com/support/specifications-hardware/datasheets-and-compliance/system-requirements-for-saleae-products",
+        "source_title": "System Requirements | Saleae"
+      },
+      {
+        "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed",
+        "source_title": "Device USB VID and PID Information | Saleae"
+      }
+    ],
+    "source_note": "Saleae documents Logic 2 support on macOS 12 and later for Intel systems, identifies Logic Pro 8 as USB 21A9:1005, and documents USB 3.0 as the full-performance path while USB 2.0 operates at reduced performance."
+  },
+  "reviewed_at": "2026-09-07T11:20:00Z",
+  "recorded_at": "2026-09-07T11:20:00Z",
+  "limitations": ["This is vendor support documentation, not an exact host-level reproduction."]
+}
