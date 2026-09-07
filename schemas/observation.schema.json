@@ -39,7 +39,7 @@
         "additionalProperties": false,
         "required": ["kind"],
         "properties": {
-          "kind": {"enum": ["direct_port", "usb_hub", "adapter", "dock", "cable"]},
+          "kind": {"enum": ["direct_port", "usb_hub", "adapter", "dock", "cable", "unspecified"]},
           "manufacturer": {"type": "string", "maxLength": 120},
           "model": {"type": "string", "maxLength": 160},
           "notes": {"type": "string", "maxLength": 500}

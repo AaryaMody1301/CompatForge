@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_observation",
+  "observation_id": "obs_avrdude_ft232r_win11arm64",
+  "device_id": "usb:0403:6001",
+  "host": {
+    "manufacturer": "Acer",
+    "model": "Aspire 14 AI (2025)",
+    "architecture": "arm64",
+    "operating_system": {
+      "family": "windows",
+      "version": "11",
+      "build": "25H2"
+    }
+  },
+  "connection_path": [
+    {
+      "kind": "unspecified",
+      "notes": "The public reproduction does not state whether the FT232R was connected directly or through a hub/dock."
+    }
+  ],
+  "software": {
+    "name": "avrdude",
+    "version": "8.1-20260504"
+  },
+  "outcome": "works_with_conditions",
+  "conditions": [
+    "The reported FTDI D2XX/MSVC ARM64 path completed the ATtiny88 read, but the reporter documented very slow performance for that mode."
+  ],
+  "evidence": {
+    "source_type": "community_report",
+    "source_url": "https://github.com/avrdudes/avrdude/discussions/1306",
+    "source_title": "avrdude under Windows on ARM64 · Discussion #1306 · avrdudes/avrdude"
+  },
+  "observed_at": "2026-05-10T00:00:00Z",
+  "recorded_at": "2026-09-07T11:30:00Z",
+  "limitations": [
+    "The connection path is unspecified and must not be used to infer direct-port, hub, or dock compatibility.",
+    "The reproduction demonstrates the reported avrdude/FTDI workflow, not every FT232R application or serial workload."
+  ],
+  "notes": "The source reports an Acer Aspire 14 AI 2025 with a Qualcomm X1 26-100 processor on Windows 11 ARM64 25H2 and documents a successful FT232R-based avrdude operation."
+}
