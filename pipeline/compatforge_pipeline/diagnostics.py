@@ -9,7 +9,8 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import datetime, timezone
+from contextlib import suppress
+from datetime import UTC, datetime
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
@@ -137,7 +138,9 @@ $os = Get-CimInstance Win32_OperatingSystem
             if build:
                 os_build = build
     except DiagnosticCollectionError:
-        warnings.append("Windows host details were unavailable; platform fallback values were used.")
+        warnings.append(
+            "Windows host details were unavailable; platform fallback values were used."
+        )
 
     platform_record = {
         "os_family": "windows",
@@ -238,7 +241,10 @@ def _dedupe_matches(matches: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [rendered[key] for key in sorted(rendered)]
 
 
-def _parse_windows_usb_payload(payload: Any, target_id: str) -> tuple[list[dict[str, Any]], int]:
+def _parse_windows_usb_payload(
+    payload: Any,
+    target_id: str,
+) -> tuple[list[dict[str, Any]], int]:
     if not isinstance(payload, dict):
         raise DiagnosticCollectionError("Windows USB collector returned an invalid payload")
     devices = payload.get("devices", [])
@@ -253,7 +259,10 @@ def _parse_windows_usb_payload(payload: Any, target_id: str) -> tuple[list[dict[
         if not isinstance(item, dict):
             continue
         try:
-            device_id = usb_device_id(str(item.get("vendor_id", "")), str(item.get("product_id", "")))
+            device_id = usb_device_id(
+                str(item.get("vendor_id", "")),
+                str(item.get("product_id", "")),
+            )
         except (TypeError, ValueError):
             continue
         if device_id != target_id:
@@ -303,7 +312,10 @@ def _extract_macos_usb_hex(value: Any) -> str | None:
     return match.group(1).upper() if match else None
 
 
-def _parse_macos_usb_payload(payload: Any, target_id: str) -> tuple[list[dict[str, Any]], int]:
+def _parse_macos_usb_payload(
+    payload: Any,
+    target_id: str,
+) -> tuple[list[dict[str, Any]], int]:
     matches: list[dict[str, Any]] = []
     raw_count = 0
 
@@ -370,10 +382,8 @@ def _collect_linux_target(
         }
         speed = _safe_read(device_dir / "speed")
         if speed:
-            try:
+            with suppress(ValueError):
                 safe["speed_mbps"] = float(speed)
-            except ValueError:
-                pass
         matches.append(safe)
     return _dedupe_matches(matches), raw_count
 
@@ -408,7 +418,7 @@ def collect_diagnostic(
         "schema_version": _DIAGNOSTIC_SCHEMA_VERSION,
         "agent": {"name": "compatforge-diagnose", "version": _agent_version()},
         "generated_at": generated_at
-        or datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+        or datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z"),
         "platform": platform_record,
         "host": host,
         "privacy": {
