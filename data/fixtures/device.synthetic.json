@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "device",
+  "device_id": "usb:FFFF:0001",
+  "manufacturer": "CompatForge Fixture Labs",
+  "product_name": "Synthetic USB Serial Adapter",
+  "category": "usb_serial_adapter",
+  "interface": "usb",
+  "identifiers": [{"scheme": "usb_vid_pid", "vendor_id": "FFFF", "product_id": "0001"}],
+  "notes": "Synthetic fixture only. This identifier is not a published compatibility claim."
+}

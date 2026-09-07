@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+apps/web/package-lock.generated.json
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Local analytical/runtime artifacts
+*.duckdb
+*.duckdb.wal
+coverage/
+htmlcov/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

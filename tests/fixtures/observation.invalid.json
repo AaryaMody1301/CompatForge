@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_observation",
+  "observation_id": "obs_invalid_001",
+  "device_id": "usb:FFFF:0001",
+  "host": {"manufacturer": "CompatForge Fixture Labs", "model": "Reference Host A", "architecture": "x86_64", "operating_system": {"family": "ubuntu", "version": "fixture-1"}},
+  "connection_path": [{"kind": "direct_port"}],
+  "outcome": "probably_works",
+  "evidence": {"source_type": "community_report", "source_url": "https://example.com/invalid", "source_title": "Invalid fixture"},
+  "observed_at": "2026-09-07T00:00:00Z",
+  "recorded_at": "2026-09-07T00:00:00Z"
+}
