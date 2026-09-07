@@ -1,3 +1,3 @@
-"""CompatForge Phase 1 contract and identity utilities."""
+"""CompatForge hardware compatibility tooling."""
 
-__version__ = "0.1.0a1"
+__version__ = "0.3.0rc1"
