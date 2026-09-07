@@ -1,0 +1,41 @@
+version: 2
+
+models:
+  - name: stg_usb_vendors
+    description: Canonical USB vendor identities from the reviewed source snapshot.
+    columns:
+      - name: vendor_id
+        data_tests: [not_null, unique]
+      - name: vendor_name
+        data_tests: [not_null]
+  - name: stg_usb_devices
+    description: Canonical USB product identities from the reviewed source snapshot.
+    columns:
+      - name: device_id
+        data_tests: [not_null, unique]
+      - name: vendor_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_usb_vendors')
+                field: vendor_id
+  - name: int_device_identity
+    description: USB product identities enriched with canonical vendor names.
+    columns:
+      - name: device_id
+        data_tests: [not_null, unique]
+  - name: device_catalog
+    description: Public identity-only catalog. This model contains no compatibility claim.
+    columns:
+      - name: device_id
+        data_tests: [not_null, unique]
+      - name: vendor_id
+        data_tests: [not_null]
+      - name: product_id
+        data_tests: [not_null]
+      - name: identity_source
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['usb.ids']

@@ -8,45 +8,40 @@ CompatForge is being built to answer a narrow but difficult question:
 
 The project treats compatibility as a configuration-level evidence problem rather than a binary device-to-laptop lookup. Missing evidence stays `UNKNOWN`; conflicting evidence stays visible; source observations are never rewritten into stronger claims than they support.
 
-## Phase 1 status
+## Current build status
 
-Phase 1 establishes the contracts that later product features depend on:
+**Phase 1 - foundation and evidence contracts:** complete.
 
-- canonical USB device identity rules;
-- machine-readable device and compatibility-observation schemas;
-- evidence-source and outcome semantics;
-- synthetic fixtures and contract regression tests;
-- repository privacy/provenance boundaries;
-- an initial Next.js App Router shell;
-- CI for Python contracts and the web build.
+**Phase 2 - hardware identity data platform:** active. The implementation now includes reviewed USB identity ingestion, content-addressed raw snapshots, source manifests, Bronze Parquet/DuckDB tables, dbt staging/intermediate/mart models, deterministic public snapshot export, and scheduled refresh candidates.
 
-No real-world compatibility result is published by this phase.
+No real-world compatibility result is published by Phase 2. Identity registries establish what a device is; they do not establish whether it works.
 
 ## Initial scope
 
-The first public data release will focus on developer and engineering USB peripherals:
+The first public compatibility release will focus on developer and engineering USB peripherals:
 
 - USB serial adapters;
 - development boards;
 - debuggers/programmers;
 - logic analyzers.
 
-Initial operating-system scope is Windows 11, macOS, and Ubuntu on `x86_64` and `arm64`. Direct USB and hub-mediated connections are modeled explicitly.
+Initial operating-system scope is Windows 11, macOS, and Ubuntu on `x86_64` and `arm64`. Direct USB and hub-mediated connections will be modeled explicitly when compatibility evidence begins in Phase 3.
 
 ## Repository layout
 
 ```text
-apps/web/                  Next.js product shell
-pipeline/compatforge_pipeline/
-                           validation and identity tooling
-schemas/                   public JSON Schema contracts
-data/fixtures/             synthetic reviewed examples
-tests/                     contract and identity regression tests
-docs/                      architecture, data, evidence, privacy, roadmap
-.github/workflows/ci.yml   repository verification
+apps/web/                     Next.js product shell
+pipeline/compatforge_pipeline Python identity/evidence tooling
+dbt/compatforge/               DuckDB/dbt identity transformations
+data/sources/                  reviewed upstream-source contracts
+data/fixtures/                 synthetic evidence fixtures
+schemas/                       public JSON Schema contracts
+tests/                         contract and pipeline regression tests
+docs/                          architecture, data, evidence, privacy, roadmap
+.github/workflows/             CI and reviewed refresh workflows
 ```
 
-## Validate the data contracts
+## Validate contracts
 
 Python 3.13+:
 
@@ -57,16 +52,32 @@ pytest -q
 ruff check pipeline tests
 ```
 
-## Run the web shell
-
-Next.js 16 requires Node.js 20.9 or newer. From `apps/web`:
+## Build the identity platform locally
 
 ```bash
-npm install
-npm run dev
+python -m pip install -e ".[dev,data]"
+
+python -m compatforge_pipeline.identity_pipeline bronze \
+  --workspace build/local \
+  --input tests/fixtures/usb.ids \
+  --retrieved-at 2026-01-01T00:00:00Z \
+  --source-url synthetic://tests/fixtures/usb.ids
+
+export COMPATFORGE_DUCKDB_PATH="$PWD/build/local/compatforge.duckdb"
+dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/local
 ```
 
-The Phase 1 CI workflow also runs lint, TypeScript checking, and a production build. A committed npm lockfile is a Phase 1 merge gate; the initial CI run is allowed to generate it so the reviewed dependency graph can be committed before merge.
+To build a live refresh candidate, omit `--input`, `--retrieved-at`, and `--source-url`. The downloader uses the reviewed upstream URL and an identifying User-Agent.
+
+## Run the web shell
+
+From `apps/web`:
+
+```bash
+npm ci
+npm run dev
+```
 
 ## Evidence rule
 
@@ -86,11 +97,12 @@ See [`docs/EVIDENCE_MODEL.md`](docs/EVIDENCE_MODEL.md).
 
 1. Unknown is a valid result.
 2. Evidence and derived claims are separate records.
-3. Compatibility specificity must never be silently broadened.
-4. Conflicting evidence is preserved, not averaged away.
-5. Raw source provenance and licensing are release requirements.
-6. Diagnostic collection must be inspectable and privacy-minimized.
+3. Hardware identity and compatibility outcomes are separate data domains.
+4. Compatibility specificity must never be silently broadened.
+5. Conflicting evidence is preserved, not averaged away.
+6. Raw source provenance and licensing are release requirements.
+7. Diagnostic collection must be inspectable and privacy-minimized.
 
 ## License
 
-Project source code is MIT licensed. Third-party source data keeps its upstream license and attribution requirements; it will be tracked separately in `THIRD_PARTY_NOTICES.md` and source manifests.
+Project source code is MIT licensed. Third-party source data keeps its upstream license and attribution requirements; see `THIRD_PARTY_NOTICES.md` and per-snapshot manifests.

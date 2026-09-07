@@ -1,0 +1,8 @@
+compatforge:
+  target: ci
+  outputs:
+    ci:
+      type: duckdb
+      path: "{{ env_var('COMPATFORGE_DUCKDB_PATH') }}"
+      schema: analytics
+      threads: 1

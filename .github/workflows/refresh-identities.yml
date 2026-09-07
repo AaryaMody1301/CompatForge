@@ -1,0 +1,45 @@
+name: Refresh USB identity snapshot
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install data stack
+        run: python -m pip install -e ".[data]"
+
+      - name: Download and build reviewed source snapshot
+        run: python -m compatforge_pipeline.identity_pipeline bronze --workspace build/live
+
+      - name: Build analytical identity models
+        env:
+          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/live/compatforge.duckdb
+        run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+
+      - name: Export public identity snapshot
+        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/live
+
+      - name: Upload refresh candidate
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-usb-identity-candidate
+          path: |
+            build/live/manifests/source_manifest.json
+            build/live/public/
+          retention-days: 14

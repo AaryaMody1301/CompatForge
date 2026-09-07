@@ -37,6 +37,71 @@ jobs:
       - name: Validate public fixtures
         run: python -m compatforge_pipeline.validate data/fixtures
 
+  data-platform:
+    name: Deterministic identity snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install data stack
+        run: python -m pip install -e ".[dev,data]"
+
+      - name: Build first bronze snapshot
+        run: >-
+          python -m compatforge_pipeline.identity_pipeline bronze
+          --workspace build/identity-a
+          --input tests/fixtures/usb.ids
+          --retrieved-at 2026-01-01T00:00:00Z
+          --source-url synthetic://tests/fixtures/usb.ids
+
+      - name: Transform first snapshot with dbt
+        env:
+          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/identity-a/compatforge.duckdb
+        run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+
+      - name: Export first public snapshot
+        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/identity-a
+
+      - name: Build second bronze snapshot
+        run: >-
+          python -m compatforge_pipeline.identity_pipeline bronze
+          --workspace build/identity-b
+          --input tests/fixtures/usb.ids
+          --retrieved-at 2026-01-01T00:00:00Z
+          --source-url synthetic://tests/fixtures/usb.ids
+
+      - name: Transform second snapshot with dbt
+        env:
+          COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/identity-b/compatforge.duckdb
+        run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+
+      - name: Export second public snapshot
+        run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/identity-b
+
+      - name: Verify deterministic output
+        run: >-
+          python -m compatforge_pipeline.identity_pipeline verify
+          build/identity-a/public/snapshot_manifest.json
+          build/identity-b/public/snapshot_manifest.json
+
+      - name: Run data-layer tests
+        run: pytest -q tests/test_identity_pipeline.py
+
+      - name: Upload reviewed synthetic snapshot
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-synthetic-identity-snapshot
+          path: |
+            build/identity-a/manifests/source_manifest.json
+            build/identity-a/public/
+          retention-days: 7
+
   web:
     name: Next.js web
     runs-on: ubuntu-latest
@@ -52,12 +117,6 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Generate lockfile when bootstrapping
-        if: ${{ hashFiles('apps/web/package-lock.json') == '' }}
-        run: |
-          npm install --package-lock-only --ignore-scripts
-          cp package-lock.json package-lock.generated.json
-
       - name: Install locked dependencies
         run: npm ci
 
@@ -69,12 +128,3 @@ jobs:
 
       - name: Production build
         run: npm run build
-
-      - name: Upload generated lockfile for Phase 1 review
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: compatforge-web-package-lock
-          path: apps/web/package-lock.generated.json
-          if-no-files-found: ignore
-          retention-days: 7

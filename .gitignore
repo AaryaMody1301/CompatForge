@@ -25,6 +25,9 @@ apps/web/package-lock.generated.json
 *.duckdb.wal
 coverage/
 htmlcov/
+dbt/compatforge/target/
+dbt/compatforge/logs/
+dbt/compatforge/dbt_packages/
 
 # Editors / OS
 .vscode/

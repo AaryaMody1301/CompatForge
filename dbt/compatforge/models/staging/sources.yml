@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    description: Raw normalized identities parsed from a single reviewed usb.ids snapshot.
+    tables:
+      - name: usb_vendors
+        columns:
+          - name: vendor_id
+            data_tests: [not_null, unique]
+          - name: vendor_name
+            data_tests: [not_null]
+          - name: source_sha256
+            data_tests: [not_null]
+      - name: usb_devices
+        columns:
+          - name: device_id
+            data_tests: [not_null, unique]
+          - name: vendor_id
+            data_tests: [not_null]
+          - name: product_id
+            data_tests: [not_null]
+          - name: product_name
+            data_tests: [not_null]
+          - name: source_sha256
+            data_tests: [not_null]
