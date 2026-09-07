@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from compatforge_pipeline.cli import main
-
 
 FIXTURE = Path("data/fixtures/diagnostic_manifest.json")
 
 
 def test_unified_cli_reports_release_version(capsys) -> None:
+    from compatforge_pipeline.cli import main
+
     try:
         main(["--version"])
     except SystemExit as exc:
@@ -18,6 +18,8 @@ def test_unified_cli_reports_release_version(capsys) -> None:
 
 
 def test_unified_cli_prepares_approved_local_handoff(tmp_path: Path) -> None:
+    from compatforge_pipeline.cli import main
+
     explanation_path = tmp_path / "explanation.json"
     handoff_path = tmp_path / "handoff.json"
 
@@ -57,6 +59,8 @@ def test_unified_cli_prepares_approved_local_handoff(tmp_path: Path) -> None:
 
 
 def test_unified_cli_refuses_unapproved_handoff(tmp_path: Path) -> None:
+    from compatforge_pipeline.cli import main
+
     explanation_path = tmp_path / "explanation.json"
     assert (
         main(
