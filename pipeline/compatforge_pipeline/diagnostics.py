@@ -18,7 +18,7 @@ from typing import Any
 from .contracts import validate_document
 from .identity import normalize_usb_hex, usb_device_id
 
-_DIAGNOSTIC_SCHEMA_VERSION = "1.0.0"
+_DIAGNOSTIC_SCHEMA_VERSION = "1.1.0"
 _DEVICE_ID_RE = re.compile(r"^usb:([0-9A-Fa-f]{1,4}):([0-9A-Fa-f]{1,4})$")
 _MAC_USB_HEX_RE = re.compile(r"0x([0-9A-Fa-f]{4})")
 
@@ -84,6 +84,47 @@ def _safe_read(path: Path) -> str | None:
     except OSError:
         return None
     return value or None
+
+
+def _safe_metadata_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or len(text) > 256:
+        return None
+    if any(ord(character) < 32 for character in text):
+        return None
+    return text
+
+
+def _driver_record(
+    *,
+    name: Any = None,
+    provider: Any = None,
+    version_value: Any = None,
+) -> dict[str, str] | None:
+    record: dict[str, str] = {}
+    safe_name = _safe_metadata_text(name)
+    safe_provider = _safe_metadata_text(provider)
+    safe_version = _safe_metadata_text(version_value)
+    if safe_name:
+        record["name"] = safe_name
+    if safe_provider:
+        record["provider"] = safe_provider
+    if safe_version:
+        record["version"] = safe_version
+    return record or None
+
+
+def _driver_metadata_status(matches: list[dict[str, Any]], match_count: int) -> str:
+    if match_count == 0:
+        return "not_observed"
+    drivers = [driver for match in matches for driver in match.get("drivers", [])]
+    if not drivers:
+        return "unavailable"
+    if all(driver.get("version") for driver in drivers):
+        return "collected"
+    return "partial"
 
 
 def _powershell_executable() -> str:
@@ -269,9 +310,16 @@ def _parse_windows_usb_payload(
             continue
         raw_count += 1
         safe: dict[str, Any] = {"device_id": device_id, "connection_path": "unspecified"}
-        status = str(item.get("status") or "").strip()
+        status = _safe_metadata_text(item.get("status"))
         if status:
             safe["status"] = status
+        driver = _driver_record(
+            name=item.get("driver_name"),
+            provider=item.get("driver_provider"),
+            version_value=item.get("driver_version"),
+        )
+        if driver:
+            safe["drivers"] = [driver]
         matches.append(safe)
     return _dedupe_matches(matches), raw_count
 
@@ -288,10 +336,25 @@ Get-PnpDevice -PresentOnly | ForEach-Object {
     $foundVid = $Matches[1].ToUpperInvariant()
     $foundPid = $Matches[2].ToUpperInvariant()
     if ($foundVid -eq $vid -and $foundPid -eq $pid) {
+      $driverVersion = ''
+      $driverProvider = ''
+      $driverName = ''
+      try {
+        $driverVersion = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverVersion' -ErrorAction Stop).Data
+      } catch {}
+      try {
+        $driverProvider = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverProvider' -ErrorAction Stop).Data
+      } catch {}
+      try {
+        $driverName = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverDesc' -ErrorAction Stop).Data
+      } catch {}
       $results += [pscustomobject]@{
         vendor_id = $foundVid
         product_id = $foundPid
         status = [string]$_.Status
+        driver_name = $driverName
+        driver_provider = $driverProvider
+        driver_version = $driverVersion
       }
     }
   }
@@ -346,11 +409,47 @@ def _collect_macos_target(vid: str, pid: str) -> tuple[list[dict[str, Any]], int
     return _parse_macos_usb_payload(payload, usb_device_id(vid, pid))
 
 
+def _collect_linux_driver_records(
+    device_dir: Path,
+    *,
+    sysfs_root: Path,
+    module_root: Path,
+) -> list[dict[str, str]]:
+    records: dict[str, dict[str, str]] = {}
+    prefix = f"{device_dir.name}:"
+    try:
+        entries = sorted(sysfs_root.iterdir(), key=lambda item: item.name)
+    except OSError:
+        return []
+
+    for interface_dir in entries:
+        if not interface_dir.name.startswith(prefix):
+            continue
+        try:
+            driver_target = (interface_dir / "driver").resolve(strict=True)
+        except OSError:
+            continue
+        driver_name = _safe_metadata_text(driver_target.name)
+        if not driver_name:
+            continue
+        driver = {"name": driver_name}
+        version_value = _safe_read(module_root / driver_name / "version")
+        if version_value is None and "-" in driver_name:
+            version_value = _safe_read(module_root / driver_name.replace("-", "_") / "version")
+        safe_version = _safe_metadata_text(version_value)
+        if safe_version:
+            driver["version"] = safe_version
+        key = json.dumps(driver, sort_keys=True, separators=(",", ":"))
+        records[key] = driver
+    return [records[key] for key in sorted(records)]
+
+
 def _collect_linux_target(
     vid: str,
     pid: str,
     *,
     sysfs_root: Path = Path("/sys/bus/usb/devices"),
+    module_root: Path = Path("/sys/module"),
 ) -> tuple[list[dict[str, Any]], int]:
     if not sysfs_root.is_dir():
         raise DiagnosticCollectionError("Linux USB sysfs is unavailable")
@@ -384,6 +483,13 @@ def _collect_linux_target(
         if speed:
             with suppress(ValueError):
                 safe["speed_mbps"] = float(speed)
+        drivers = _collect_linux_driver_records(
+            device_dir,
+            sysfs_root=sysfs_root,
+            module_root=module_root,
+        )
+        if drivers:
+            safe["drivers"] = drivers
         matches.append(safe)
     return _dedupe_matches(matches), raw_count
 
@@ -436,19 +542,26 @@ def collect_diagnostic(
         canonical_id, vid, pid = parse_usb_device_id(device_id)
         try:
             matches, match_count = _collect_target(effective_system, vid, pid)
+            driver_status = _driver_metadata_status(matches, match_count)
             manifest["target"] = {
                 "requested_device_id": canonical_id,
                 "collection_status": "collected",
                 "present": match_count > 0,
                 "match_count": match_count,
+                "driver_metadata_status": driver_status,
                 "matches": matches,
             }
+            if match_count > 0 and driver_status == "unavailable":
+                manifest["warnings"].append(
+                    "Driver metadata was unavailable for the selected target on this platform."
+                )
         except DiagnosticCollectionError:
             manifest["target"] = {
                 "requested_device_id": canonical_id,
                 "collection_status": "unavailable",
                 "present": None,
                 "match_count": 0,
+                "driver_metadata_status": "unavailable",
                 "matches": [],
             }
             manifest["warnings"].append("Target USB collection was unavailable on this host.")
