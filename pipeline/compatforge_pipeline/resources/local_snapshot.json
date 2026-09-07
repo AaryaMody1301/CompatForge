@@ -1,0 +1,259 @@
+{
+  "format_version": "1.0.0",
+  "observation_count": 1,
+  "observations": [
+    {
+      "conditions": [
+        "The reported FTDI D2XX/MSVC ARM64 path completed the ATtiny88 read, but the reporter documented very slow performance for that mode."
+      ],
+      "connection_path": [
+        {
+          "kind": "unspecified"
+        }
+      ],
+      "device_id": "usb:0403:6001",
+      "evidence": {
+        "source_type": "community_report",
+        "sources": [
+          {
+            "source_title": "avrdude under Windows on ARM64 · Discussion #1306 · avrdudes/avrdude",
+            "source_url": "https://github.com/avrdudes/avrdude/discussions/1306"
+          }
+        ]
+      },
+      "host": {
+        "architecture": "arm64",
+        "manufacturer": "Acer",
+        "model": "Aspire 14 AI (2025)",
+        "operating_system": {
+          "build": "25H2",
+          "family": "windows",
+          "version": "11"
+        }
+      },
+      "limitations": [
+        "The connection path is unspecified and must not be used to infer direct-port, hub, or dock compatibility.",
+        "The reproduction demonstrates the reported avrdude/FTDI workflow, not every FT232R application or serial workload."
+      ],
+      "observation_id": "obs_avrdude_ft232r_win11arm64",
+      "outcome": "works_with_conditions"
+    }
+  ],
+  "support_statement_count": 5,
+  "support_statements": [
+    {
+      "conditions": [
+        "The Windows setup executable is not available for ARM64; use the ARM64 driver package and the applicable installation guidance."
+      ],
+      "device_id": "usb:0403:6001",
+      "driver": {
+        "name": "FTDI VCP",
+        "version": "2.12.36.20A"
+      },
+      "evidence": {
+        "source_type": "vendor_documentation",
+        "sources": [
+          {
+            "source_title": "VCP Drivers | FTDI",
+            "source_url": "https://ftdichip.com/drivers/vcp-drivers/"
+          }
+        ]
+      },
+      "limitations": [
+        "Driver availability does not prove compatibility through every hub, dock, adapter, or cable.",
+        "This is a vendor driver-support statement, not an exact laptop-level reproduction."
+      ],
+      "scope": {
+        "architecture": "arm64",
+        "connection": {
+          "kind": "any_usb"
+        },
+        "operating_system": {
+          "family": "windows",
+          "version_mode": "exact",
+          "versions": [
+            "11"
+          ]
+        }
+      },
+      "statement_id": "sup_ftdi_ft232r_win11_arm64",
+      "support_status": "supported_with_conditions"
+    },
+    {
+      "conditions": [
+        "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance."
+      ],
+      "device_id": "usb:21A9:1005",
+      "evidence": {
+        "source_type": "vendor_documentation",
+        "sources": [
+          {
+            "source_title": "Supported Operating Systems | Saleae",
+            "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems"
+          },
+          {
+            "source_title": "System Requirements | Saleae",
+            "source_url": "https://www.saleae.com/support/specifications-hardware/datasheets-and-compliance/system-requirements-for-saleae-products"
+          },
+          {
+            "source_title": "Device USB VID and PID Information | Saleae",
+            "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed"
+          }
+        ]
+      },
+      "limitations": [
+        "This is vendor support documentation, not an exact host-level reproduction."
+      ],
+      "scope": {
+        "architecture": "arm64",
+        "connection": {
+          "kind": "any_usb",
+          "minimum_usb_generation": "2.0"
+        },
+        "operating_system": {
+          "family": "macos",
+          "minimum_version": "12",
+          "version_mode": "minimum"
+        }
+      },
+      "software": {
+        "name": "Saleae Logic 2"
+      },
+      "statement_id": "sup_saleae_lp8_macos_arm64",
+      "support_status": "supported_with_conditions"
+    },
+    {
+      "conditions": [
+        "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance."
+      ],
+      "device_id": "usb:21A9:1005",
+      "evidence": {
+        "source_type": "vendor_documentation",
+        "sources": [
+          {
+            "source_title": "Supported Operating Systems | Saleae",
+            "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems"
+          },
+          {
+            "source_title": "System Requirements | Saleae",
+            "source_url": "https://www.saleae.com/support/specifications-hardware/datasheets-and-compliance/system-requirements-for-saleae-products"
+          },
+          {
+            "source_title": "Device USB VID and PID Information | Saleae",
+            "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed"
+          }
+        ]
+      },
+      "limitations": [
+        "This is vendor support documentation, not an exact host-level reproduction."
+      ],
+      "scope": {
+        "architecture": "x86_64",
+        "connection": {
+          "kind": "any_usb",
+          "minimum_usb_generation": "2.0"
+        },
+        "operating_system": {
+          "family": "macos",
+          "minimum_version": "12",
+          "version_mode": "minimum"
+        }
+      },
+      "software": {
+        "name": "Saleae Logic 2"
+      },
+      "statement_id": "sup_saleae_lp8_macos_x64",
+      "support_status": "supported_with_conditions"
+    },
+    {
+      "conditions": [
+        "Saleae documents a known USB 3.0 bandwidth/capture-reliability limitation for USB 3 analyzers on tested Windows ARM64 systems, with current throughput substantially below the device maximum.",
+        "Windows ARM64 support is currently documented through Saleae's Logic 2 Insider Build channel."
+      ],
+      "device_id": "usb:21A9:1005",
+      "evidence": {
+        "source_type": "vendor_documentation",
+        "sources": [
+          {
+            "source_title": "Official Arm64 support for Windows and Linux | Saleae",
+            "source_url": "https://discuss.saleae.com/t/official-arm64-support-for-windows-and-linux/3716"
+          },
+          {
+            "source_title": "Device USB VID and PID Information | Saleae",
+            "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed"
+          }
+        ]
+      },
+      "limitations": [
+        "The source describes an Insider Build and should not be generalized to every Windows ARM64 software release.",
+        "This is vendor support/testing information, not an exact laptop-model reproduction."
+      ],
+      "scope": {
+        "architecture": "arm64",
+        "connection": {
+          "kind": "any_usb",
+          "minimum_usb_generation": "2.0"
+        },
+        "operating_system": {
+          "family": "windows",
+          "version_mode": "exact",
+          "versions": [
+            "11"
+          ]
+        }
+      },
+      "software": {
+        "name": "Saleae Logic 2"
+      },
+      "statement_id": "sup_saleae_lp8_windows_arm64",
+      "support_status": "supported_with_conditions"
+    },
+    {
+      "conditions": [
+        "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance."
+      ],
+      "device_id": "usb:21A9:1005",
+      "evidence": {
+        "source_type": "vendor_documentation",
+        "sources": [
+          {
+            "source_title": "Supported Operating Systems | Saleae",
+            "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems"
+          },
+          {
+            "source_title": "System Requirements | Saleae",
+            "source_url": "https://www.saleae.com/support/specifications-hardware/datasheets-and-compliance/system-requirements-for-saleae-products"
+          },
+          {
+            "source_title": "Device USB VID and PID Information | Saleae",
+            "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed"
+          }
+        ]
+      },
+      "limitations": [
+        "It does not establish support for Windows on ARM64.",
+        "This is vendor support documentation, not an exact host-level reproduction."
+      ],
+      "scope": {
+        "architecture": "x86_64",
+        "connection": {
+          "kind": "any_usb",
+          "minimum_usb_generation": "2.0"
+        },
+        "operating_system": {
+          "family": "windows",
+          "version_mode": "one_of",
+          "versions": [
+            "10",
+            "11"
+          ]
+        }
+      },
+      "software": {
+        "name": "Saleae Logic 2"
+      },
+      "statement_id": "sup_saleae_lp8_windows_x64",
+      "support_status": "supported_with_conditions"
+    }
+  ]
+}
