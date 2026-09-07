@@ -2,13 +2,13 @@
 
 CompatForge is designed to require less device data, not more.
 
-## Phase 1
+## Public web product
 
-There is no telemetry, account system, diagnostic upload, analytics SDK or tracking pixel in the Phase 1 implementation.
+The read-only public product does not require a user account or diagnostic upload. Compatibility evidence remains separate from local device inspection.
 
-## Planned diagnostic-agent rules
+## Phase 5 local diagnostic agent
 
-A future local diagnostic agent must exclude by default:
+The diagnostic agent is local-only and allowlist-based. It excludes from the generated manifest:
 
 - serial numbers;
 - usernames;
@@ -19,7 +19,15 @@ A future local diagnostic agent must exclude by default:
 - filesystem paths containing user identity;
 - unrelated connected-device inventory.
 
-Before any community submission is sent, users must be able to inspect the exact structured payload.
+The CLI requires either a specific target USB VID/PID or `--host-only`. There is deliberately no default full-device inventory mode.
+
+The manifest contains explicit privacy flags stating that it is local-only, contains no serial/network identifiers, contains no unrelated USB inventory, and performs no automatic upload. Users can inspect the exact JSON before any future contribution workflow is introduced.
+
+On macOS, the native System Information command can return more local fields than CompatForge needs. The parser uses a strict allowlist and only transfers target VID/PID presence into the manifest; extra native-command fields are discarded and never logged or written by CompatForge. Linux avoids opening USB serial attributes entirely. Windows filters the target VID/PID inside PowerShell before returning JSON and does not return raw PnP instance IDs.
+
+## Future submission boundary
+
+Any future community contribution must be a separate, explicit user action after manifest inspection. Raw private diagnostics must not become public evidence automatically.
 
 ## Public evidence
 

@@ -15,6 +15,7 @@ _SCHEMA_BY_RECORD_TYPE = {
     "device": "device.schema.json",
     "compatibility_observation": "observation.schema.json",
     "compatibility_support_statement": "support-statement.schema.json",
+    "diagnostic_manifest": "diagnostic-manifest.schema.json",
 }
 
 

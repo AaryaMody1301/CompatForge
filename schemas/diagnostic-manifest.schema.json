@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://compatforge.dev/schemas/diagnostic-manifest.schema.json",
+  "title": "CompatForge diagnostic manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "agent",
+    "generated_at",
+    "platform",
+    "host",
+    "privacy",
+    "warnings"
+  ],
+  "properties": {
+    "record_type": {"const": "diagnostic_manifest"},
+    "schema_version": {"const": "1.0.0"},
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {"const": "compatforge-diagnose"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "generated_at": {"type": "string", "format": "date-time"},
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os_family", "os_name", "os_version", "architecture"],
+      "properties": {
+        "os_family": {
+          "enum": ["windows", "macos", "ubuntu", "linux", "unknown"]
+        },
+        "os_name": {"type": "string", "minLength": 1},
+        "os_version": {"type": "string", "minLength": 1},
+        "os_build": {"type": "string", "minLength": 1},
+        "architecture": {"enum": ["x86_64", "arm64", "unknown"]}
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "manufacturer": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1}
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_device_id",
+        "collection_status",
+        "present",
+        "match_count",
+        "matches"
+      ],
+      "properties": {
+        "requested_device_id": {
+          "type": "string",
+          "pattern": "^usb:[0-9A-F]{4}:[0-9A-F]{4}$"
+        },
+        "collection_status": {"enum": ["collected", "unavailable"]},
+        "present": {"type": ["boolean", "null"]},
+        "match_count": {"type": "integer", "minimum": 0},
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["device_id", "connection_path"],
+            "properties": {
+              "device_id": {
+                "type": "string",
+                "pattern": "^usb:[0-9A-F]{4}:[0-9A-F]{4}$"
+              },
+              "connection_path": {
+                "enum": ["direct_port", "usb_hub", "unspecified"]
+              },
+              "status": {"type": "string", "minLength": 1},
+              "speed_mbps": {"type": "number", "minimum": 0}
+            }
+          }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collection_mode",
+        "scope",
+        "serial_numbers_in_manifest",
+        "network_identifiers_in_manifest",
+        "unrelated_usb_devices_in_manifest",
+        "automatic_upload"
+      ],
+      "properties": {
+        "collection_mode": {"const": "local_only"},
+        "scope": {"enum": ["host_only", "target_device_only"]},
+        "serial_numbers_in_manifest": {"const": false},
+        "network_identifiers_in_manifest": {"const": false},
+        "unrelated_usb_devices_in_manifest": {"const": false},
+        "automatic_upload": {"const": false}
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  }
+}
