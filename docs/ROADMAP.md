@@ -60,7 +60,9 @@ Status: **complete**.
 
 Status: **active**.
 
-Phase 5A implements:
+### Phase 5A - privacy-first collection foundation
+
+Status: **complete**.
 
 - privacy-minimized host/OS/architecture detection;
 - target-only USB presence detection on Windows, macOS, and Linux;
@@ -71,13 +73,30 @@ Phase 5A implements:
 - synthetic parser/contract tests;
 - cross-platform host-only CI smoke tests.
 
-Remaining Phase 5 work:
+### Phase 5B - offline context and explanation
 
-- privacy-reviewed driver-version collection;
-- packaged local CompatForge snapshot lookup;
-- local resolver explanation using the diagnostic manifest;
-- signed/packageable CLI release artifacts;
-- user-approved contribution handoff, without automatic upload.
+Status: **implementation in review**.
+
+- privacy-reviewed target driver metadata on Windows and Linux;
+- explicit unavailable driver state on macOS rather than broad collection;
+- deterministic packaged local compatibility snapshot;
+- snapshot drift verification against reviewed repository evidence;
+- `compatforge-explain` using the existing deterministic resolver;
+- source/limitation provenance in local explanations;
+- snapshot SHA-256 and record counts in every explanation;
+- no upload or network dependency.
+
+### Phase 5C - distributable release and explicit handoff
+
+Planned:
+
+- signed/packageable standalone CLI artifacts;
+- checksums/SBOM and release attestations;
+- end-user install documentation;
+- explicit, user-approved contribution handoff;
+- no automatic upload.
+
+Phase 5 is complete once Phase 5C ships with cross-platform release verification.
 
 ## Phase 6 - Community evidence
 
