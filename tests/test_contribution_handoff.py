@@ -11,7 +11,6 @@ from compatforge_pipeline.contribution_handoff import (
 )
 from compatforge_pipeline.local_explain import explain_diagnostic
 
-
 FIXTURE = Path("data/fixtures/diagnostic_manifest.json")
 
 
