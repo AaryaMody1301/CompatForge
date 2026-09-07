@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_observation",
+  "observation_id": "obs_example_debug_win11",
+  "device_id": "usb:1234:0001",
+  "host": {
+    "manufacturer": "Example Systems",
+    "model": "Model A",
+    "architecture": "x86_64",
+    "operating_system": {"family": "windows", "version": "11", "build": "24H2"}
+  },
+  "connection_path": [{"kind": "direct_port"}],
+  "driver": {"name": "Example Driver", "version": "1.2.3"},
+  "software": {"name": "Example Debugger", "version": "4.5.6"},
+  "outcome": "works",
+  "evidence": {
+    "source_type": "independent_reproduction",
+    "source_url": "https://example.invalid/compatforge/synthetic-observation",
+    "source_title": "Synthetic CompatForge observation"
+  },
+  "observed_at": "2026-06-01T00:00:00Z",
+  "recorded_at": "2026-06-02T00:00:00Z",
+  "limitations": ["Synthetic fixture; not real compatibility evidence."],
+  "notes": "Used only to verify deterministic evidence-pipeline behavior."
+}

@@ -32,9 +32,11 @@ Status: **active**.
 
 ### Phase 3A - evidence semantics and deterministic resolver
 
+Status: **complete**.
+
 - separate exact observations from scoped vendor/support statements;
 - add reviewed Saleae and FTDI support records from official documentation;
-- preserve the five observed claim states without converting vendor support into `works`;
+- preserve observed claim states without converting vendor support into `works`;
 - exact-match resolution;
 - explicit host and OS-version relaxation tiers;
 - deterministic conflict handling;
@@ -43,14 +45,17 @@ Status: **active**.
 
 ### Phase 3B - normalized evidence data platform
 
-- ingest observations/support statements into DuckDB;
-- dbt staging/intermediate/marts for host, OS, driver, software, and connection dimensions;
-- staleness/freshness models;
-- reviewed exact real-world reproductions;
-- deterministic evidence snapshot export;
-- coverage metrics and evidence-change reports.
+Status: **implementation in review**.
 
-Phase 3 is complete only after Phase 3B passes its data-contract, dbt, reproducibility, and resolver gates.
+- ingest observations/support statements into DuckDB;
+- normalize host, OS, driver, software, and connection dimensions with dbt;
+- deterministic freshness/staleness models;
+- preserve reviewed real-world reproductions without inventing missing connection topology;
+- deterministic evidence snapshot export to JSONL/Parquet;
+- per-device coverage metrics;
+- double-build evidence reproducibility CI.
+
+Phase 3 is complete once Phase 3B is merged with all data-contract, dbt, reproducibility, resolver, and web gates green.
 
 ## Phase 4 - Public web MVP
 

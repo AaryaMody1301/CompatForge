@@ -48,12 +48,16 @@ Source type is metadata. It is not an opaque numeric trust score.
 
 If equally specific observations disagree between success and failure, the resolver preserves every observation and returns `conflicting`. It does not average evidence into a probability.
 
-## Specificity
+## Specificity and unknown connection paths
 
-A result for Windows 11 x86-64 through a direct port is not automatically a result for Windows 11 ARM64 or a USB hub. Phase 3A may relax host model and then OS version, but it never relaxes architecture, OS family, or connection path. Every relaxation is explicit in the resolver output.
+A result for Windows 11 x86-64 through a direct port is not automatically a result for Windows 11 ARM64 or a USB hub. The resolver may relax host model and then OS version, but it never relaxes architecture, OS family, or connection path. Every relaxation is explicit in the resolver output.
+
+Phase 3B allows an observation connection kind of `unspecified` only when a credible source does not document the physical path. Such an observation is preserved for provenance and coverage but does not match a query for `direct_port`, `usb_hub`, `dock`, or another specific path. CompatForge therefore prefers an explicit unknown over an invented connection topology.
 
 ## Freshness
 
 `observed_at` is when an observation occurred or was documented. `recorded_at` is when CompatForge recorded it.
 
 Support statements use `reviewed_at` to record when CompatForge last checked the source and `recorded_at` for when the record entered the corpus. Source freshness and record creation time are not interchangeable.
+
+The analytical layer classifies evidence as `fresh` (up to 180 days), `aging` (181-365 days), or `stale` (more than 365 days) relative to an explicit snapshot `as_of` timestamp. Freshness metadata never rewrites the underlying outcome/support state.

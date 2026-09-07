@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_support_statement",
+  "statement_id": "sup_example_debug_win11",
+  "device_id": "usb:1234:0001",
+  "scope": {
+    "architecture": "x86_64",
+    "operating_system": {"family": "windows", "version_mode": "exact", "versions": ["11"]},
+    "connection": {"kind": "direct_port", "minimum_usb_generation": "2.0"}
+  },
+  "driver": {"name": "Example Driver", "version": "1.2.3"},
+  "software": {"name": "Example Debugger", "version": "4.5.6"},
+  "support_status": "supported",
+  "evidence": {
+    "source_type": "vendor_documentation",
+    "sources": [
+      {
+        "source_url": "https://example.invalid/compatforge/synthetic-support",
+        "source_title": "Synthetic CompatForge support statement"
+      }
+    ],
+    "source_note": "Synthetic support fixture used only by tests."
+  },
+  "reviewed_at": "2026-06-02T00:00:00Z",
+  "recorded_at": "2026-06-02T00:00:00Z",
+  "limitations": ["Synthetic fixture; not real vendor support evidence."]
+}

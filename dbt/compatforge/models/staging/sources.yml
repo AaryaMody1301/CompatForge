@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: bronze
     schema: bronze
-    description: Raw normalized identities parsed from a single reviewed usb.ids snapshot.
+    description: Raw normalized identity and evidence records loaded by deterministic CompatForge pipelines.
     tables:
       - name: usb_vendors
         columns:
@@ -25,3 +25,23 @@ sources:
             data_tests: [not_null]
           - name: source_sha256
             data_tests: [not_null]
+      - name: evidence_run_metadata
+        columns:
+          - name: as_of
+            data_tests: [not_null, unique]
+      - name: compatibility_observations
+        columns:
+          - name: observation_id
+            data_tests: [not_null, unique]
+          - name: device_id
+            data_tests: [not_null]
+          - name: record_sha256
+            data_tests: [not_null, unique]
+      - name: support_statements
+        columns:
+          - name: statement_id
+            data_tests: [not_null, unique]
+          - name: device_id
+            data_tests: [not_null]
+          - name: record_sha256
+            data_tests: [not_null, unique]

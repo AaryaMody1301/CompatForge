@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_support_statement",
+  "statement_id": "sup_saleae_lp8_windows_arm64",
+  "device_id": "usb:21A9:1005",
+  "scope": {
+    "architecture": "arm64",
+    "operating_system": {
+      "family": "windows",
+      "version_mode": "exact",
+      "versions": ["11"]
+    },
+    "connection": {
+      "kind": "any_usb",
+      "minimum_usb_generation": "2.0"
+    }
+  },
+  "software": {"name": "Saleae Logic 2"},
+  "support_status": "supported_with_conditions",
+  "conditions": [
+    "Windows ARM64 support is currently documented through Saleae's Logic 2 Insider Build channel.",
+    "Saleae documents a known USB 3.0 bandwidth/capture-reliability limitation for USB 3 analyzers on tested Windows ARM64 systems, with current throughput substantially below the device maximum."
+  ],
+  "evidence": {
+    "source_type": "vendor_documentation",
+    "sources": [
+      {
+        "source_url": "https://discuss.saleae.com/t/official-arm64-support-for-windows-and-linux/3716",
+        "source_title": "Official Arm64 support for Windows and Linux | Saleae"
+      },
+      {
+        "source_url": "https://www.saleae.com/support/troubleshooting/device-connection-issues/the-devices-usb-vid-and-pid-failed",
+        "source_title": "Device USB VID and PID Information | Saleae"
+      }
+    ],
+    "source_note": "Saleae reports Windows 11 ARM64 testing on Snapdragon X and Snapdragon 8cx Gen 3 systems and documents a current USB 3 capture-throughput limitation for Logic Pro 8-class analyzers. The device VID/PID is sourced from Saleae's identification documentation."
+  },
+  "reviewed_at": "2026-09-07T11:30:00Z",
+  "recorded_at": "2026-09-07T11:30:00Z",
+  "limitations": [
+    "This is vendor support/testing information, not an exact laptop-model reproduction.",
+    "The source describes an Insider Build and should not be generalized to every Windows ARM64 software release."
+  ]
+}
