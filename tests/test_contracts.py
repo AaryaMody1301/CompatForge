@@ -13,8 +13,8 @@ def load(path: Path) -> dict:
         return json.load(handle)
 
 
-def test_all_public_phase_1_fixtures_validate() -> None:
-    assert validate_paths([ROOT / "data" / "fixtures"]) == 2
+def test_all_public_fixtures_validate() -> None:
+    assert validate_paths([ROOT / "data" / "fixtures"]) == 3
 
 
 def test_unknown_observation_outcome_is_rejected() -> None:
