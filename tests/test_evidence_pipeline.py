@@ -2,9 +2,7 @@ from pathlib import Path
 
 import pytest
 
-pytest.importorskip("duckdb")
-
-import duckdb
+duckdb = pytest.importorskip("duckdb")
 
 from compatforge_pipeline.evidence_pipeline import ingest_evidence
 from compatforge_pipeline.identity_pipeline import build_bronze
