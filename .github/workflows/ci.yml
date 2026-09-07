@@ -34,8 +34,15 @@ jobs:
       - name: Test
         run: pytest -q
 
-      - name: Validate public fixtures
-        run: python -m compatforge_pipeline.validate data/fixtures
+      - name: Validate public fixtures and reviewed support evidence
+        run: python -m compatforge_pipeline.validate data/fixtures data/evidence/vendor
+
+      - name: Resolver smoke test
+        run: >-
+          python -m compatforge_pipeline.resolver
+          --query tests/queries/saleae-win11-x64.json
+          --observations data/fixtures
+          --support data/evidence/vendor
 
   data-platform:
     name: Deterministic identity snapshot

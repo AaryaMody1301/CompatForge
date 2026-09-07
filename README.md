@@ -12,20 +12,13 @@ The project treats compatibility as a configuration-level evidence problem rathe
 
 **Phase 1 - foundation and evidence contracts:** complete.
 
-**Phase 2 - hardware identity data platform:** active. The implementation now includes reviewed USB identity ingestion, content-addressed raw snapshots, source manifests, Bronze Parquet/DuckDB tables, dbt staging/intermediate/mart models, deterministic public snapshot export, and scheduled refresh candidates.
+**Phase 2 - hardware identity data platform:** complete. The repository has reviewed USB identity ingestion, content-addressed raw snapshots, source manifests, Bronze Parquet/DuckDB tables, dbt staging/intermediate/mart models, deterministic public snapshot export, and scheduled refresh candidates.
 
-No real-world compatibility result is published by Phase 2. Identity registries establish what a device is; they do not establish whether it works.
+**Phase 3 - compatibility evidence and resolver:** active. Phase 3A adds scoped vendor-support evidence and a deterministic resolver while keeping vendor support separate from observed compatibility.
 
 ## Initial scope
 
-The first public compatibility release will focus on developer and engineering USB peripherals:
-
-- USB serial adapters;
-- development boards;
-- debuggers/programmers;
-- logic analyzers.
-
-Initial operating-system scope is Windows 11, macOS, and Ubuntu on `x86_64` and `arm64`. Direct USB and hub-mediated connections will be modeled explicitly when compatibility evidence begins in Phase 3.
+The first public compatibility release focuses on developer and engineering USB peripherals, initially USB serial adapters and logic analyzers across Windows, macOS, and Ubuntu on `x86_64` and `arm64`.
 
 ## Repository layout
 
@@ -34,9 +27,10 @@ apps/web/                     Next.js product shell
 pipeline/compatforge_pipeline Python identity/evidence tooling
 dbt/compatforge/               DuckDB/dbt identity transformations
 data/sources/                  reviewed upstream-source contracts
+data/evidence/                 reviewed compatibility/support evidence
 data/fixtures/                 synthetic evidence fixtures
 schemas/                       public JSON Schema contracts
-tests/                         contract and pipeline regression tests
+tests/                         contract, resolver, and pipeline tests
 docs/                          architecture, data, evidence, privacy, roadmap
 .github/workflows/             CI and reviewed refresh workflows
 ```
@@ -47,7 +41,7 @@ Python 3.13+:
 
 ```bash
 python -m pip install -e ".[dev]"
-python -m compatforge_pipeline.validate data/fixtures
+python -m compatforge_pipeline.validate data/fixtures data/evidence/vendor
 pytest -q
 ruff check pipeline tests
 ```
@@ -68,7 +62,18 @@ dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
 python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/local
 ```
 
-To build a live refresh candidate, omit `--input`, `--retrieved-at`, and `--source-url`. The downloader uses the reviewed upstream URL and an identifying User-Agent.
+## Resolve a compatibility query
+
+```bash
+python -m compatforge_pipeline.resolver \
+  --query tests/queries/saleae-win11-x64.json \
+  --observations data/fixtures \
+  --support data/evidence/vendor
+```
+
+The resolver returns two separate answers: an observed claim and a vendor/support state. Vendor documentation can produce `supported`, but it cannot manufacture an observed `works` result.
+
+See [`docs/RESOLVER.md`](docs/RESOLVER.md) and [`docs/EVIDENCE_MODEL.md`](docs/EVIDENCE_MODEL.md).
 
 ## Run the web shell
 
@@ -79,29 +84,16 @@ npm ci
 npm run dev
 ```
 
-## Evidence rule
-
-A compatibility observation must identify, at minimum:
-
-- what device was involved;
-- the host and CPU architecture;
-- the operating system and version;
-- the connection path;
-- the observed outcome;
-- the evidence source and source type;
-- when the result was observed and recorded.
-
-See [`docs/EVIDENCE_MODEL.md`](docs/EVIDENCE_MODEL.md).
-
 ## Project principles
 
 1. Unknown is a valid result.
 2. Evidence and derived claims are separate records.
 3. Hardware identity and compatibility outcomes are separate data domains.
-4. Compatibility specificity must never be silently broadened.
-5. Conflicting evidence is preserved, not averaged away.
-6. Raw source provenance and licensing are release requirements.
-7. Diagnostic collection must be inspectable and privacy-minimized.
+4. Vendor support and reproduced compatibility are separate evidence classes.
+5. Compatibility specificity must never be silently broadened.
+6. Conflicting evidence is preserved, not averaged away.
+7. Raw source provenance and licensing are release requirements.
+8. Diagnostic collection must be inspectable and privacy-minimized.
 
 ## License
 

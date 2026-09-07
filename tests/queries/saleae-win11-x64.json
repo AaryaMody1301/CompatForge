@@ -1,0 +1,10 @@
+{
+  "device_id": "usb:21A9:1005",
+  "host": {
+    "manufacturer": "Example",
+    "model": "Example x64 workstation",
+    "architecture": "x86_64",
+    "operating_system": {"family": "windows", "version": "11"}
+  },
+  "connection_path": [{"kind": "direct_port"}]
+}

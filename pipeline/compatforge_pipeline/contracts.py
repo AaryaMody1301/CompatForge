@@ -14,6 +14,7 @@ SCHEMA_DIR = REPO_ROOT / "schemas"
 _SCHEMA_BY_RECORD_TYPE = {
     "device": "device.schema.json",
     "compatibility_observation": "observation.schema.json",
+    "compatibility_support_statement": "support-statement.schema.json",
 }
 
 
