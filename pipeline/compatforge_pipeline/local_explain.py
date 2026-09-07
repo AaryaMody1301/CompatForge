@@ -116,17 +116,23 @@ def explain_diagnostic(
     validate_document(manifest, source="diagnostic manifest")
     target = manifest.get("target")
     if not isinstance(target, dict):
-        raise LocalExplanationError("local explanation requires a target-device diagnostic manifest")
+        raise LocalExplanationError(
+            "local explanation requires a target-device diagnostic manifest"
+        )
 
     local_snapshot = snapshot or load_packaged_snapshot()
     validate_snapshot(local_snapshot)
     limitations = {
         "The packaged local snapshot can lag the public website until the CLI is updated.",
-        "Collected driver metadata is context-only in Phase 5B and does not alter resolver matching.",
+        (
+            "Collected driver metadata is context-only in Phase 5B and does not alter "
+            "resolver matching."
+        ),
     }
     if not manifest["host"].get("manufacturer") or not manifest["host"].get("model"):
         limitations.add(
-            "Host manufacturer/model metadata is incomplete; exact host matching may be unavailable."
+            "Host manufacturer/model metadata is incomplete; exact host matching may be "
+            "unavailable."
         )
 
     if target["collection_status"] != "collected":
@@ -136,14 +142,17 @@ def explain_diagnostic(
     elif target["present"] is not True:
         status = "target_absent"
         results = []
-        limitations.add("No compatibility result was generated because the target was not observed.")
+        limitations.add(
+            "No compatibility result was generated because the target was not observed."
+        )
     else:
         status = "resolved"
         results = []
         for connection_path in _connection_paths(manifest):
             if connection_path == "unspecified":
                 limitations.add(
-                    "The target connection path is unspecified, so direct-port and hub compatibility are not inferred."
+                    "The target connection path is unspecified, so direct-port and hub "
+                    "compatibility are not inferred."
                 )
             query = _query_for_path(manifest, connection_path)
             resolved = resolve(
