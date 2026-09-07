@@ -1,0 +1,42 @@
+{
+  "record_type": "diagnostic_manifest",
+  "schema_version": "1.0.0",
+  "agent": {
+    "name": "compatforge-diagnose",
+    "version": "synthetic-test"
+  },
+  "generated_at": "2026-09-07T00:00:00Z",
+  "platform": {
+    "os_family": "ubuntu",
+    "os_name": "Ubuntu 24.04 LTS",
+    "os_version": "24.04",
+    "architecture": "x86_64"
+  },
+  "host": {
+    "manufacturer": "Synthetic Systems",
+    "model": "Fixture Host"
+  },
+  "target": {
+    "requested_device_id": "usb:0403:6001",
+    "collection_status": "collected",
+    "present": true,
+    "match_count": 1,
+    "matches": [
+      {
+        "device_id": "usb:0403:6001",
+        "connection_path": "direct_port",
+        "status": "present",
+        "speed_mbps": 480
+      }
+    ]
+  },
+  "privacy": {
+    "collection_mode": "local_only",
+    "scope": "target_device_only",
+    "serial_numbers_in_manifest": false,
+    "network_identifiers_in_manifest": false,
+    "unrelated_usb_devices_in_manifest": false,
+    "automatic_upload": false
+  },
+  "warnings": []
+}

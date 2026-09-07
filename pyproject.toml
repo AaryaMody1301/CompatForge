@@ -29,6 +29,7 @@ compatforge-validate = "compatforge_pipeline.validate:main"
 compatforge-identity = "compatforge_pipeline.identity_pipeline:main"
 compatforge-resolve = "compatforge_pipeline.resolver:main"
 compatforge-evidence = "compatforge_pipeline.evidence_pipeline:main"
+compatforge-diagnose = "compatforge_pipeline.diagnostics:main"
 
 [tool.setuptools.packages.find]
 where = ["pipeline"]

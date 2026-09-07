@@ -44,32 +44,40 @@ Status: **complete**.
 
 ## Phase 4 - Public web MVP
 
-Status: **active**.
+Status: **complete**.
 
-Implemented in the Phase 4 branch:
-
-- searchable device catalog;
+- searchable reviewed device catalog;
 - static device evidence pages;
-- native-form configuration checker;
+- configuration-level compatibility checker;
 - separate observed-compatibility and vendor-support results;
 - explicit resolver-relaxation labels;
 - evidence sources and device timelines;
 - coverage and methodology pages;
-- responsive/accessibility-focused UI without a component library or client-state dependency.
-
-Remaining merge/release gates:
-
-- Next.js lint, TypeScript, and production build green in CI;
-- preview deployment verified;
-- merge Phase 4;
-- tag the first read-only public release candidate before `v0.1.0`.
+- responsive/accessibility-focused UI;
+- Vercel production deployment verified against the merged commit.
 
 ## Phase 5 - Local diagnostic agent
 
-- privacy-minimized host/device detection;
-- local knowledge snapshot lookup;
-- inspectable diagnostic JSON;
-- optional user-approved evidence contribution.
+Status: **active**.
+
+Phase 5A implements:
+
+- privacy-minimized host/OS/architecture detection;
+- target-only USB presence detection on Windows, macOS, and Linux;
+- canonical diagnostic-manifest JSON Schema;
+- explicit no-upload/no-serial/no-network privacy flags;
+- Linux USB hub/direct-path classification and link speed when available;
+- inspectable `compatforge-diagnose` CLI output;
+- synthetic parser/contract tests;
+- cross-platform host-only CI smoke tests.
+
+Remaining Phase 5 work:
+
+- privacy-reviewed driver-version collection;
+- packaged local CompatForge snapshot lookup;
+- local resolver explanation using the diagnostic manifest;
+- signed/packageable CLI release artifacts;
+- user-approved contribution handoff, without automatic upload.
 
 ## Phase 6 - Community evidence
 
