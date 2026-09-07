@@ -164,9 +164,18 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
             raise LocalSnapshotError("local snapshot support statement is missing required fields")
         statement_ids.append(str(record["statement_id"]))
 
-    if observation_ids != sorted(observation_ids) or len(observation_ids) != len(set(observation_ids)):
+    observation_ids_are_valid = (
+        observation_ids == sorted(observation_ids)
+        and len(observation_ids) == len(set(observation_ids))
+    )
+    if not observation_ids_are_valid:
         raise LocalSnapshotError("local snapshot observation IDs must be unique and sorted")
-    if statement_ids != sorted(statement_ids) or len(statement_ids) != len(set(statement_ids)):
+
+    statement_ids_are_valid = (
+        statement_ids == sorted(statement_ids)
+        and len(statement_ids) == len(set(statement_ids))
+    )
+    if not statement_ids_are_valid:
         raise LocalSnapshotError("local snapshot support statement IDs must be unique and sorted")
 
 
