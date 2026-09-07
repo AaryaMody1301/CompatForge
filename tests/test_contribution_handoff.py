@@ -4,12 +4,11 @@ import json
 from pathlib import Path
 
 import pytest
-
+from compatforge_pipeline.contracts import validate_document
 from compatforge_pipeline.contribution_handoff import (
     ContributionHandoffError,
     prepare_contribution_handoff,
 )
-from compatforge_pipeline.contracts import validate_document
 from compatforge_pipeline.local_explain import explain_diagnostic
 
 
