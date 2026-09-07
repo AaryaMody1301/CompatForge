@@ -1,0 +1,9 @@
+# Synthetic usb.ids fixture for CompatForge tests. Not real hardware evidence.
+1234  Example Instruments
+	0001  Debug Adapter
+	0002  Serial Bridge
+		0001  Nested interface entry that must be ignored
+ABCD  Demo Labs
+	00FF  Logic Analyzer
+C 00  Device
+	01  Audio
