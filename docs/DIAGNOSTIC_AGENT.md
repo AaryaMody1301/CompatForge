@@ -2,33 +2,19 @@
 
 Phase 5 provides an inspectable, local-only diagnostic workflow. The agent does not upload data and does not attempt to fix, enable, disable, flash, or reconfigure hardware.
 
-## Commands
+## Phase 5C standalone command
 
-Collect host/OS metadata only:
-
-```bash
-compatforge-diagnose --host-only --output compatforge-diagnostic.json
-```
-
-Collect host metadata plus one known target peripheral:
+The downloadable release exposes one end-user command:
 
 ```bash
-compatforge-diagnose --device usb:0403:6001 --output compatforge-diagnostic.json
+compatforge-hw --version
+compatforge-hw snapshot-info
+compatforge-hw diagnose --host-only --output diagnostic.json
+compatforge-hw diagnose --device usb:0403:6001 --output diagnostic.json
+compatforge-hw explain --diagnostic diagnostic.json --output explanation.json
 ```
 
-Inspect the packaged local compatibility snapshot:
-
-```bash
-compatforge-snapshot info
-```
-
-Resolve a previously inspected target diagnostic entirely offline:
-
-```bash
-compatforge-explain \
-  --diagnostic compatforge-diagnostic.json \
-  --output compatforge-explanation.json
-```
+The Python distribution retains the older development console scripts (`compatforge-diagnose`, `compatforge-explain`, and `compatforge-snapshot`) for repository workflows. The standalone binary uses the unified `compatforge-hw` surface.
 
 The diagnostic manifest and local compatibility explanation are deliberately separate JSON records. Collection records local facts; the explanation is a derived claim from the packaged reviewed snapshot.
 
@@ -54,42 +40,30 @@ The command requires either one canonical device ID or `--host-only`; there is d
 
 ### Windows
 
-Target presence comes from `Get-PnpDevice -PresentOnly`. Filtering by VID/PID happens inside PowerShell before JSON is returned to Python. For matching instances only, the collector reads the Windows device properties for driver description, provider, and version. The raw PnP instance ID is used locally for the property lookup but is never returned to Python or written into the manifest.
-
-Windows documents `DEVPKEY_Device_DriverVersion` as the installed device-instance driver version and provides corresponding driver description/provider properties through the same device-property model.
+Target presence comes from `Get-PnpDevice -PresentOnly`. Filtering by VID/PID happens inside PowerShell before JSON is returned to Python. For matching instances only, the collector reads driver description, provider, and version. The raw PnP instance ID is used locally for the property lookup but is never returned to Python or written into the manifest.
 
 ### Linux
 
-USB target matching still avoids the `serial` attribute. For a matched USB device, CompatForge looks only at matching interface directories, resolves the driver symlink to its basename, and reads `/sys/module/<driver>/version` when that module publishes a version. The raw sysfs path is not emitted.
-
-Linux kernel documentation notes that `/sys/module/<MODULENAME>/version` exists when the module provides `MODULE_VERSION`; absence is therefore treated as partial metadata rather than a failure.
+USB target matching avoids the `serial` attribute. For a matched USB device, CompatForge looks only at matching interface directories, resolves the driver symlink to its basename, and reads `/sys/module/<driver>/version` when that module publishes a version. The raw sysfs path is not emitted.
 
 ### macOS
 
-Phase 5B intentionally does not attempt to infer a per-device driver version from broader system-extension or I/O Registry state. Target presence remains allowlisted from System Information, and `driver_metadata_status` is `unavailable` when no privacy-reviewed driver record can be produced.
+CompatForge intentionally does not infer a per-device driver version from broader system-extension or I/O Registry state. Target presence remains allowlisted from System Information, and `driver_metadata_status` is `unavailable` when no privacy-reviewed driver record can be produced.
 
-## Driver metadata status
+## Packaged local snapshot and Schemas
 
-A target contains one of:
+The Python package and standalone executable bundle:
 
-- `collected` - driver records were found and each has a version;
-- `partial` - safe driver records were found but at least one version is unavailable;
-- `unavailable` - the target is present, but no privacy-reviewed driver record is available;
-- `not_observed` - the target was not present.
+- a compact projection of reviewed compatibility observations and support statements;
+- the public JSON Schema contracts required to validate diagnostics, explanations, and handoffs.
 
-Driver metadata is context-only in Phase 5B. It is displayed in the local explanation but does not silently tighten or broaden resolver matching.
+CI requires the packaged schema copies to match the public `schemas/` directory exactly and verifies that the packaged local snapshot matches reviewed repository evidence. This allows a frozen binary to work without a source checkout.
 
-## Packaged local snapshot
-
-`compatforge-hw-pipeline` bundles a compact projection of the reviewed compatibility observations and vendor-support statements. The projection contains only fields needed for local resolution and evidence/source explanation.
-
-CI rebuilds that projection from `data/evidence/` and requires byte-equivalent canonical content before merge. `compatforge-snapshot verify` is the same drift check available to developers.
-
-The snapshot can lag the website until a newer CLI package is released. Every local explanation therefore includes the packaged snapshot SHA-256 and record counts.
+Every local explanation includes the packaged snapshot SHA-256 and record counts. A released CLI can therefore lag the website without hiding which reviewed snapshot it used.
 
 ## Local explanation semantics
 
-`compatforge-explain` reuses the same deterministic resolver as the web/data layers. It preserves:
+`compatforge-hw explain` reuses the same deterministic resolver as the web/data layers. It preserves:
 
 - observed compatibility versus vendor support as separate answers;
 - exact, host-relaxed, and OS-version-relaxed specificity;
@@ -99,12 +73,34 @@ The snapshot can lag the website until a newer CLI package is released. Every lo
 
 If target collection failed or the requested device was not observed, the command produces no compatibility result. If the connection path is `unspecified`, it does not infer direct-port or hub compatibility.
 
+## Explicit contribution handoff
+
+Phase 5C adds a local export boundary, not a submission client:
+
+```bash
+compatforge-hw prepare-contribution \
+  --diagnostic diagnostic.json \
+  --explanation explanation.json \
+  --approve-export \
+  --output contribution-handoff.json
+```
+
+Without `--approve-export`, the command fails. The generated record is marked `user_approved_export: true` and `evidence_ready: false`. It contains safe configuration context plus the local resolver state, but it does not contain an observed user outcome, reproduction steps, or publication approval.
+
+The handoff is never uploaded by Phase 5C. Phase 6 must introduce any authenticated submission/review path as a separate user action.
+
+## Standalone release verification
+
+The release workflow builds natively for Linux, Windows, and macOS on x86_64 and arm64. Each platform archive gets an SPDX SBOM and, outside pull requests, GitHub provenance and SBOM attestations. Pull requests only build and smoke-test the artifacts.
+
+See [`CLI_RELEASE.md`](CLI_RELEASE.md) for target assets, checksum/attestation verification, release-tag gates, and the distinction between GitHub provenance and OS-vendor code signing.
+
 ## Current limitations
 
 - direct-versus-hub classification remains reliable only on Linux; Windows/macOS emit `unspecified`;
 - macOS driver-version collection remains intentionally unavailable;
-- collected driver metadata does not yet participate in resolver matching;
-- signed/packageable standalone binaries are deferred to Phase 5C;
-- there is no submission/upload flow in Phase 5B.
+- collected driver metadata is context-only and does not participate in resolver matching;
+- Phase 5C provenance attestations are not Apple notarization or Windows Authenticode;
+- the contribution handoff is local context only; no submission/upload path exists in Phase 5.
 
-These limitations are preferable to inventing data or widening local collection beyond the resolver's current needs.
+These limitations are preferable to inventing data, widening local collection, or overstating release signing guarantees.

@@ -69,34 +69,38 @@ Status: **complete**.
 - canonical diagnostic-manifest JSON Schema;
 - explicit no-upload/no-serial/no-network privacy flags;
 - Linux USB hub/direct-path classification and link speed when available;
-- inspectable `compatforge-diagnose` CLI output;
+- inspectable diagnostic output;
 - synthetic parser/contract tests;
 - cross-platform host-only CI smoke tests.
 
 ### Phase 5B - offline context and explanation
 
-Status: **implementation in review**.
+Status: **complete**.
 
 - privacy-reviewed target driver metadata on Windows and Linux;
 - explicit unavailable driver state on macOS rather than broad collection;
 - deterministic packaged local compatibility snapshot;
 - snapshot drift verification against reviewed repository evidence;
-- `compatforge-explain` using the existing deterministic resolver;
+- offline explanation using the existing deterministic resolver;
 - source/limitation provenance in local explanations;
 - snapshot SHA-256 and record counts in every explanation;
 - no upload or network dependency.
 
 ### Phase 5C - distributable release and explicit handoff
 
-Planned:
+Status: **active**.
 
-- signed/packageable standalone CLI artifacts;
-- checksums/SBOM and release attestations;
-- end-user install documentation;
-- explicit, user-approved contribution handoff;
+- unified `compatforge-hw` end-user CLI;
+- packaged JSON Schema contracts for source-independent/frozen validation;
+- explicit `--approve-export` contribution handoff with `evidence_ready: false`;
+- native standalone builds for Linux, Windows, and macOS on x86_64/arm64;
+- SPDX SBOMs and SHA-256 release manifests;
+- GitHub provenance and SBOM attestations outside pull requests;
+- pull-request smoke verification of frozen binaries;
+- end-user installation, verification, and signing-boundary documentation;
 - no automatic upload.
 
-Phase 5 is complete once Phase 5C ships with cross-platform release verification.
+Phase 5 is complete once Phase 5C's cross-platform release workflow is green and the first release-candidate process has been audited. Native Apple notarization and Windows Authenticode are not falsely claimed by provenance attestations.
 
 ## Phase 6 - Community evidence
 
@@ -104,7 +108,8 @@ Phase 5 is complete once Phase 5C ships with cross-platform release verification
 - PostgreSQL/Supabase moderation store;
 - row-level security;
 - validation/review/publish lifecycle;
-- abuse and duplicate controls.
+- abuse and duplicate controls;
+- explicit conversion of reviewed handoff context into evidence only after user-supplied outcome/reproduction details.
 
 ## Phase 7 - Coverage and freshness
 
@@ -118,7 +123,6 @@ Phase 5 is complete once Phase 5C ships with cross-platform release verification
 
 - browser acceptance tests;
 - security/dependency gates;
-- SBOM and checksums;
 - immutable data release manifests;
-- artifact attestations;
+- artifact attestations across web/data release surfaces;
 - release candidate and `v1.0.0` acceptance.
