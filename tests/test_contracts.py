@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from compatforge_pipeline.contracts import ContractValidationError, validate_document
 from compatforge_pipeline.validate import validate_paths
 

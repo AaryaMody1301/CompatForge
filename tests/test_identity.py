@@ -1,5 +1,4 @@
 import pytest
-
 from compatforge_pipeline.identity import normalize_usb_hex, usb_device_id
 
 
