@@ -175,10 +175,11 @@ def ingest_evidence(
         )
         observation_rows = [_observation_row(item) for item in observations]
         if observation_rows:
-            connection.executemany(
-                "INSERT INTO bronze.compatibility_observations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                observation_rows,
+            observation_insert = (
+                "INSERT INTO bronze.compatibility_observations VALUES "
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             )
+            connection.executemany(observation_insert, observation_rows)
         connection.execute(
             """
             CREATE OR REPLACE TABLE bronze.support_statements (
@@ -209,23 +210,37 @@ def ingest_evidence(
         )
         support_rows = [_support_row(item) for item in support_statements]
         if support_rows:
-            connection.executemany(
-                "INSERT INTO bronze.support_statements VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                support_rows,
+            support_insert = (
+                "INSERT INTO bronze.support_statements VALUES "
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             )
-        connection.execute(
-            f"COPY (SELECT * FROM bronze.compatibility_observations ORDER BY observation_id) TO '{_sql_path(observations_parquet)}' (FORMAT PARQUET, COMPRESSION ZSTD)"
+            connection.executemany(support_insert, support_rows)
+
+        observations_copy = (
+            "COPY (SELECT * FROM bronze.compatibility_observations ORDER BY observation_id) "
+            f"TO '{_sql_path(observations_parquet)}' "
+            "(FORMAT PARQUET, COMPRESSION ZSTD)"
         )
-        connection.execute(
-            f"COPY (SELECT * FROM bronze.support_statements ORDER BY statement_id) TO '{_sql_path(support_parquet)}' (FORMAT PARQUET, COMPRESSION ZSTD)"
+        support_copy = (
+            "COPY (SELECT * FROM bronze.support_statements ORDER BY statement_id) "
+            f"TO '{_sql_path(support_parquet)}' "
+            "(FORMAT PARQUET, COMPRESSION ZSTD)"
         )
+        connection.execute(observations_copy)
+        connection.execute(support_copy)
 
     observation_manifest = sorted(
-        ({"id": item["observation_id"], "sha256": _canonical_sha256(item)} for item in observations),
+        (
+            {"id": item["observation_id"], "sha256": _canonical_sha256(item)}
+            for item in observations
+        ),
         key=lambda item: item["id"],
     )
     support_manifest = sorted(
-        ({"id": item["statement_id"], "sha256": _canonical_sha256(item)} for item in support_statements),
+        (
+            {"id": item["statement_id"], "sha256": _canonical_sha256(item)}
+            for item in support_statements
+        ),
         key=lambda item: item["id"],
     )
     manifest = {
