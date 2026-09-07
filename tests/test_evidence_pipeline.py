@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-duckdb = pytest.importorskip("duckdb")
+pytest.importorskip("duckdb")
 
 from compatforge_pipeline.evidence_pipeline import ingest_evidence
 from compatforge_pipeline.identity_pipeline import build_bronze
@@ -46,6 +46,8 @@ def test_evidence_ingest_is_manifest_deterministic(tmp_path: Path) -> None:
 
 
 def test_evidence_ingest_creates_bronze_tables(tmp_path: Path) -> None:
+    import duckdb
+
     _build_workspace(tmp_path)
     ingest_evidence(
         workspace=tmp_path,
