@@ -58,10 +58,7 @@ def build_bronze(
     workspace = workspace.resolve()
     workspace.mkdir(parents=True, exist_ok=True)
 
-    if input_path is None:
-        downloaded = download_usb_ids()
-    else:
-        downloaded = load_usb_ids(input_path)
+    downloaded = download_usb_ids() if input_path is None else load_usb_ids(input_path)
 
     content = downloaded.content
     vendors, devices = parse_usb_ids(content)
