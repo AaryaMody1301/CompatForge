@@ -340,13 +340,25 @@ Get-PnpDevice -PresentOnly | ForEach-Object {
       $driverProvider = ''
       $driverName = ''
       try {
-        $driverVersion = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverVersion' -ErrorAction Stop).Data
+        $driverVersionProperty = Get-PnpDeviceProperty `
+          -InstanceId $instance `
+          -KeyName 'DEVPKEY_Device_DriverVersion' `
+          -ErrorAction Stop
+        $driverVersion = [string]$driverVersionProperty.Data
       } catch {}
       try {
-        $driverProvider = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverProvider' -ErrorAction Stop).Data
+        $driverProviderProperty = Get-PnpDeviceProperty `
+          -InstanceId $instance `
+          -KeyName 'DEVPKEY_Device_DriverProvider' `
+          -ErrorAction Stop
+        $driverProvider = [string]$driverProviderProperty.Data
       } catch {}
       try {
-        $driverName = [string](Get-PnpDeviceProperty -InstanceId $instance -KeyName 'DEVPKEY_Device_DriverDesc' -ErrorAction Stop).Data
+        $driverNameProperty = Get-PnpDeviceProperty `
+          -InstanceId $instance `
+          -KeyName 'DEVPKEY_Device_DriverDesc' `
+          -ErrorAction Stop
+        $driverName = [string]$driverNameProperty.Data
       } catch {}
       $results += [pscustomobject]@{
         vendor_id = $foundVid
