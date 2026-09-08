@@ -155,7 +155,9 @@ def extract_saleae_supported_os(document: str) -> dict[str, Any]:
     if not windows:
         raise ValueError("source did not contain the reviewed Windows 10/11 x64 declaration")
     if not macos:
-        raise ValueError("source did not contain the reviewed macOS Intel/Apple silicon declaration")
+        raise ValueError(
+            "source did not contain the reviewed macOS Intel/Apple silicon declaration"
+        )
     if not ubuntu:
         raise ValueError("source did not contain the reviewed Ubuntu 64-bit declaration")
 
