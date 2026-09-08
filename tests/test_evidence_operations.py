@@ -135,8 +135,14 @@ def test_operations_report_prioritizes_changes_health_and_stale_evidence() -> No
     assert device["platforms"]["vendor_only"] == ["windows/x86_64"]
     assert device["freshness"] == {"fresh": 1, "aging": 0, "stale": 1}
 
-    assert report["work_queue"][0]["task_type"] == "vendor_semantic_change"
+    assert report["work_queue"][0]["task_type"] == "stale_evidence"
+    assert report["work_queue"][0]["score"] == 580
     assert report["work_queue"][0]["priority"] == "P0"
+    vendor_change = next(
+        item for item in report["work_queue"] if item["task_type"] == "vendor_semantic_change"
+    )
+    assert vendor_change["score"] == 500
+    assert vendor_change["priority"] == "P0"
     assert {item["task_type"] for item in report["work_queue"]} == {
         "vendor_semantic_change",
         "source_health",
