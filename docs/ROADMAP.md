@@ -218,7 +218,7 @@ Status: **implementation in progress**.
 
 ### Phase 8A - browser acceptance
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - real headless-Chrome acceptance against the exact production Next.js build in pull-request CI;
 - no new web testing dependency or package-lock expansion;
@@ -233,10 +233,18 @@ See `docs/BROWSER_ACCEPTANCE.md` for the exact contract and local commands.
 
 ### Phase 8B - supply-chain and security gates
 
-- dependency-review enforcement for pull requests;
-- dependency and workflow security policy;
-- production security-header acceptance;
-- secret and high-severity vulnerability gates where supported by the public repository/tooling boundary.
+Status: **implementation complete; merge pending**.
+
+- pull-request dependency review that rejects newly introduced high-severity vulnerabilities;
+- scheduled/current-state Python and npm dependency audits;
+- CodeQL `security-extended` analysis for Python and JavaScript/TypeScript;
+- repository-owned workflow policy rejecting `pull_request_target`, mutable third-party actions, missing top-level permissions and network-to-shell install patterns;
+- weekly Dependabot updates for GitHub Actions, npm and Python dependencies;
+- explicit CSP anti-embedding/base/object restrictions plus HSTS, referrer, permissions, MIME-sniffing and legacy frame headers;
+- browser acceptance verifies every reviewed route receives the required security headers and does not expose `X-Powered-By`;
+- GitHub public-repository secret scanning remains a platform control rather than a repository credential-reading workflow.
+
+Repository branch/ruleset immutability remains a Phase 8D setting gate; Phase 8B does not silently mutate repository administration settings. See `docs/SECURITY_HARDENING.md`.
 
 ### Phase 8C - immutable release manifests and attestations
 
