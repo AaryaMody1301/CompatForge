@@ -18,6 +18,22 @@ FTDI_HTML = """
 </body></html>
 """
 
+FTDI_D2XX_HTML = """
+<html><body>
+<p>The Windows driver installer is not available for ARM64.</p>
+<table>
+<tr><td>Windows (Desktop)*</td><td>2025-03-04</td><td>2.12.36.20</td>
+<td>2.12.36.20</td><td>2.12.36.20A</td><td>WHQL Certified</td></tr>
+<tr><td>Windows (Universal)***</td><td>2025-03-04</td><td>2.12.36.20U</td>
+<td>2.12.36.20U</td><td>2.12.36.20UA</td></tr>
+<tr><td>Linux</td><td>2026-06-17</td><td>1.4.35</td><td>1.4.35</td>
+<td>1.4.35 ARMv7 hard-float 1.4.35 ARMv8</td></tr>
+<tr><td>Mac OS X 10.4 Tiger or later</td><td>2026-06-17</td><td>-</td>
+<td>1.4.35</td><td>1.4.35</td></tr>
+</table>
+</body></html>
+"""
+
 SALEAE_HTML = """
 <html><body>
 <h1>Supported Operating Systems</h1>
@@ -46,6 +62,31 @@ def test_ftdi_adapter_extracts_reviewed_semantics() -> None:
     }
     assert snapshot["semantic_sha256"] == (
         "8574c5810f1defd56a005b8b9a642078234ed25e1a9485ccee7c8c70b618da0c"
+    )
+
+
+def test_ftdi_d2xx_adapter_extracts_cross_platform_semantics() -> None:
+    snapshot = vendor_adapters.snapshot_from_html(
+        "ftdi_d2xx",
+        FTDI_D2XX_HTML,
+        checked_at=CHECKED_AT,
+    )
+
+    assert snapshot["facts"] == {
+        "installer_arm64_note": True,
+        "linux_armv8_version": "1.4.35",
+        "linux_release_date": "2026-06-17",
+        "linux_x64_version": "1.4.35",
+        "macos_arm_version": "1.4.35",
+        "macos_release_date": "2026-06-17",
+        "macos_x64_version": "1.4.35",
+        "windows_desktop_arm64_version": "2.12.36.20A",
+        "windows_desktop_release_date": "2025-03-04",
+        "windows_desktop_x64_version": "2.12.36.20",
+        "windows_universal_arm64_version": "2.12.36.20UA",
+    }
+    assert snapshot["semantic_sha256"] == (
+        "914a6b823dcf28a6af5f77b8118ebc019efe2a11c9d57d3e8cc8923dc64833e5"
     )
 
 

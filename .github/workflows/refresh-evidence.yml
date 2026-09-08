@@ -1,4 +1,4 @@
-name: Review evidence freshness
+name: Review evidence operations
 
 on:
   schedule:
@@ -65,6 +65,19 @@ jobs:
             --output build/evidence-review/vendor-changes.json \
             --summary build/evidence-review/vendor-summary.md
           cat build/evidence-review/vendor-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build prioritized coverage operations dashboard
+        shell: bash
+        run: |
+          python -m compatforge_pipeline.evidence_operations build \
+            --observations data/evidence/observations \
+            --support data/evidence/vendor \
+            --freshness build/evidence-review/freshness.json \
+            --source-checks build/evidence-review/source-checks.json \
+            --vendor-changes build/evidence-review/vendor-changes.json \
+            --output build/evidence-review/operations.json \
+            --summary build/evidence-review/operations.md
+          cat build/evidence-review/operations.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload review candidate
         uses: actions/upload-artifact@v7

@@ -21,6 +21,7 @@ MAX_SOURCE_BYTES = 2 * 1024 * 1024
 USER_AGENT = "CompatForge-vendor-review/1.0"
 
 FTDI_VCP_URL = "https://ftdichip.com/drivers/vcp-drivers/"
+FTDI_D2XX_URL = "https://ftdichip.com/drivers/d2xx-drivers/"
 SALEAE_SUPPORTED_OS_URL = (
     "https://www.saleae.com/support/logic-software/download-and-installation/"
     "supported-operating-systems"
@@ -140,6 +141,80 @@ def extract_ftdi_vcp(document: str) -> dict[str, Any]:
     }
 
 
+def extract_ftdi_d2xx(document: str) -> dict[str, Any]:
+    """Extract reviewed FTDI D2XX Windows, Linux, and macOS driver facts."""
+    text = _html_to_text(document)
+    desktop = _segment_after(text, "Windows (Desktop)", length=1800)
+    universal = _segment_after(text, "Windows (Universal)", length=1200)
+    linux = _segment_after(text, "Linux", length=2200)
+    macos = _segment_after(text, "Mac OS X", length=1200)
+
+    windows_release_date = _required_match(
+        r"\b(20\d{2}-\d{2}-\d{2})\b",
+        desktop,
+        label="Windows Desktop release date",
+    )
+    windows_x64_version = _required_match(
+        r"\b(\d+\.\d+\.\d+\.\d+)\b",
+        desktop,
+        label="Windows Desktop x64 version",
+    )
+    windows_arm64_version = _required_match(
+        r"\b(\d+\.\d+\.\d+\.\d+A)\b",
+        desktop,
+        label="Windows Desktop ARM64 version",
+    )
+    windows_universal_arm64_version = _required_match(
+        r"\b(\d+\.\d+\.\d+\.\d+UA)\b",
+        universal,
+        label="Windows Universal ARM64 version",
+    )
+    linux_release_date = _required_match(
+        r"\b(20\d{2}-\d{2}-\d{2})\b",
+        linux,
+        label="Linux release date",
+    )
+    linux_versions = re.findall(r"\b\d+\.\d+\.\d+\b", linux)
+    if len(linux_versions) < 2:
+        raise ValueError("source did not contain reviewed Linux x64 version")
+    linux_x64_version = linux_versions[1]
+    linux_armv8_version = _required_match(
+        r"\b(\d+\.\d+\.\d+)\s+ARMv8\b",
+        linux,
+        label="Linux ARMv8 version",
+    )
+    macos_release_date = _required_match(
+        r"\b(20\d{2}-\d{2}-\d{2})\b",
+        macos,
+        label="macOS release date",
+    )
+    macos_versions = re.findall(r"\b\d+\.\d+\.\d+\b", macos)
+    if len(macos_versions) < 2:
+        raise ValueError("source did not contain reviewed macOS x64/ARM versions")
+
+    lowered = text.casefold()
+    installer_arm64_note = (
+        "installer is not available for arm64" in lowered
+        or "setup executable (non-arm64)" in lowered
+    )
+    if not installer_arm64_note:
+        raise ValueError("source did not contain the reviewed ARM64 installer limitation")
+
+    return {
+        "installer_arm64_note": True,
+        "linux_armv8_version": linux_armv8_version,
+        "linux_release_date": linux_release_date,
+        "linux_x64_version": linux_x64_version,
+        "macos_arm_version": macos_versions[1],
+        "macos_release_date": macos_release_date,
+        "macos_x64_version": macos_versions[0],
+        "windows_desktop_arm64_version": windows_arm64_version,
+        "windows_desktop_release_date": windows_release_date,
+        "windows_desktop_x64_version": windows_x64_version,
+        "windows_universal_arm64_version": windows_universal_arm64_version,
+    }
+
+
 def extract_saleae_supported_os(document: str) -> dict[str, Any]:
     """Extract Saleae's general Logic 2 supported-OS architecture declarations."""
     text = _html_to_text(document)
@@ -170,6 +245,12 @@ def extract_saleae_supported_os(document: str) -> dict[str, Any]:
 
 
 ADAPTERS: dict[str, VendorAdapter] = {
+    "ftdi_d2xx": VendorAdapter(
+        name="ftdi_d2xx",
+        source_url=FTDI_D2XX_URL,
+        allowed_host="ftdichip.com",
+        extractor=extract_ftdi_d2xx,
+    ),
     "ftdi_vcp": VendorAdapter(
         name="ftdi_vcp",
         source_url=FTDI_VCP_URL,

@@ -1,0 +1,20 @@
+{
+  "adapter": "ftdi_d2xx",
+  "source_url": "https://ftdichip.com/drivers/d2xx-drivers/",
+  "reviewed_on": "2026-09-08",
+  "facts": {
+    "installer_arm64_note": true,
+    "linux_armv8_version": "1.4.35",
+    "linux_release_date": "2026-06-17",
+    "linux_x64_version": "1.4.35",
+    "macos_arm_version": "1.4.35",
+    "macos_release_date": "2026-06-17",
+    "macos_x64_version": "1.4.35",
+    "windows_desktop_arm64_version": "2.12.36.20A",
+    "windows_desktop_release_date": "2025-03-04",
+    "windows_desktop_x64_version": "2.12.36.20",
+    "windows_universal_arm64_version": "2.12.36.20UA"
+  },
+  "semantic_sha256": "914a6b823dcf28a6af5f77b8118ebc019efe2a11c9d57d3e8cc8923dc64833e5",
+  "note": "Reviewed semantic baseline only; CompatForge does not mirror the vendor page."
+}
