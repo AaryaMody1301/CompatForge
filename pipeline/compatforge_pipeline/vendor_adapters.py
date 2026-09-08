@@ -267,7 +267,7 @@ def build_live_snapshot(
         if fetched.content_type:
             match = re.search(r"charset=([^;\s]+)", fetched.content_type, re.IGNORECASE)
             if match:
-                charset = match.group(1).strip('"\'')
+                charset = match.group(1).strip("\"'")
         document = fetched.body.decode(charset, errors="replace")
         sources.append(
             snapshot_from_html(
@@ -302,11 +302,7 @@ def _load_baseline(path: Path) -> dict[str, Any]:
     return payload
 
 
-def build_change_report(
-    *,
-    snapshot: dict[str, Any],
-    baseline_dir: Path,
-) -> dict[str, Any]:
+def build_change_report(*, snapshot: dict[str, Any], baseline_dir: Path) -> dict[str, Any]:
     """Compare live semantic facts with reviewed baselines without mutating evidence."""
     changes = []
     for current in sorted(snapshot["sources"], key=lambda item: item["adapter"]):
@@ -331,12 +327,11 @@ def build_change_report(
         changed_fields = [
             key for key in keys if baseline["facts"].get(key) != current["facts"].get(key)
         ]
-        status = "changed" if changed_fields else "unchanged"
         changes.append(
             {
                 "adapter": current["adapter"],
                 "source_url": current["source_url"],
-                "status": status,
+                "status": "changed" if changed_fields else "unchanged",
                 "changed_fields": changed_fields,
                 "baseline_semantic_sha256": baseline["semantic_sha256"],
                 "current_semantic_sha256": current["semantic_sha256"],
@@ -406,7 +401,7 @@ def _parser() -> argparse.ArgumentParser:
     snapshot.add_argument("--timeout-seconds", type=float, default=20.0)
     snapshot.add_argument("--output", type=Path, required=True)
 
-    compare = commands.add_parser("compare", help="compare a live snapshot with reviewed baselines")
+    compare = commands.add_parser("compare", help="compare live semantic facts with baselines")
     compare.add_argument("--snapshot", type=Path, required=True)
     compare.add_argument("--baselines", type=Path, required=True)
     compare.add_argument("--output", type=Path, required=True)
