@@ -93,6 +93,26 @@ def test_release_manifest_is_deterministic_and_verifiable(
     assert "COMPATFORGE_RELEASE_MANIFEST.json" in checksums
 
 
+def test_release_manifest_accepts_relative_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _fixture_roots(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    manifest = _build(Path("repository"), Path("release"))
+    manifest_path, _ = write_release_files(
+        manifest=manifest,
+        release_root=Path("release"),
+    )
+    verified = verify_manifest(
+        manifest_path=manifest_path,
+        repository_root=Path("repository"),
+        release_root=Path("release"),
+        expected_commit=COMMIT,
+    )
+    assert verified == manifest
+
+
 def test_release_manifest_detects_artifact_tampering(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
