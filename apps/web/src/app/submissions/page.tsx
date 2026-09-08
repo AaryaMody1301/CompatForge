@@ -119,7 +119,7 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
                 <h2>Submission status</h2>
                 <p>
                   Only you and moderators can read these rows. Duplicate signals are deliberately
-                  opaque and never reveal another contributor's report.
+                  opaque and never reveal another contributor&apos;s report.
                 </p>
               </div>
               <div className="actions compact-actions">
