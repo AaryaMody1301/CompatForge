@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pytest
-
 from compatforge_pipeline import evidence_review
 
 EVIDENCE_FIXTURE = Path(__file__).parent / "fixtures" / "evidence"
