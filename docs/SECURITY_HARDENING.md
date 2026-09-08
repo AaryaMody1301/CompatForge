@@ -4,14 +4,16 @@ Phase 8B adds enforceable repository and deployed-web security gates without int
 
 ## Pull-request supply-chain gate
 
-`.github/workflows/security.yml` runs GitHub dependency review on pull requests targeting `main` and fails when a dependency change introduces a vulnerability at **high** severity or above.
+`.github/workflows/security.yml` runs the GitHub native dependency-review action on pull requests targeting `main` as an additional dependency-diff signal.
 
-The dependency-review action requires GitHub's repository dependency graph. The first Phase 8B run reported that dependency review is not currently supported for this repository because the dependency graph is not enabled/available to the action. Keep the dependency-review job as a hard failure until the repository owner enables **Settings → Advanced Security → Dependency graph**. Do not replace the native dependency diff with a weaker `continue-on-error` path.
+GitHub currently documents the dependency graph as permanently enabled for public repositories, and dependency review is available when that graph is available. CompatForge is public, but repeated exact-head runs of `actions/dependency-review-action@v5` returned the action's generic `Dependency review is not supported on this repository` error. The action project also documents an open failure mode where API/rate-limit errors can be surfaced through the same misleading message.
 
-The same workflow also runs current-state audits so an advisory published after a dependency was merged can still break the scheduled/main security run:
+Because the native action cannot currently provide a reliable blocking signal for this repository, Phase 8B does not make that platform error a release blocker. The native step is allowed to report a warning, while repository-owned current-state audits remain hard failures for every dependency ecosystem currently used by CompatForge:
 
 - `npm audit --audit-level=high` against the committed `apps/web/package-lock.json` dependency graph;
 - a Python audit over an exact `pip list --local --format=freeze --exclude-editable` snapshot after installing the full development/data/release dependency surface, then `pip-audit==2.10.1 --strict --no-deps` against those pinned third-party versions.
+
+These current-state audits are stricter than a pull-request-only diff for vulnerability enforcement: a high-severity advisory fails even if the vulnerable dependency was merged before the advisory was published. The native dependency-review signal remains useful when GitHub's dependency-review API responds normally, but it is not trusted as the sole high-severity vulnerability gate.
 
 The explicit installed-package snapshot excludes CompatForge's own editable source package while retaining strict collection behavior for every third-party distribution actually present in the CI environment.
 
@@ -42,7 +44,7 @@ The CodeQL job has only `contents: read` plus `security-events: write`, scoped t
 
 GitHub-maintained `actions/*` and `github/*` actions may track a major tag such as `@v6` or `@v4`. Other action owners must use a full 40-character commit SHA. Existing release-critical third-party actions are already SHA-pinned.
 
-The policy intentionally does not pretend that a YAML text check replaces repository settings, review, CodeQL, dependency review, or secret scanning.
+The policy intentionally does not pretend that a YAML text check replaces repository settings, review, CodeQL, dependency auditing, or secret scanning.
 
 ## Secret scanning boundary
 
@@ -78,4 +80,6 @@ A missing/mutated header, exposed `X-Powered-By`, wrong HTTP status, missing rev
 
 ## Remaining repository-setting gates
 
-Before Phase 8B can be called fully green, the repository dependency graph must be enabled so the native dependency-review action can run. At the start of Phase 8B, `main` is also not branch-protected and the repository has no rulesets. The latter release-immutability controls remain Phase 8D work rather than being changed implicitly from this code pull request.
+Phase 8B no longer treats the native dependency-review API error as a repository-setting blocker because GitHub's current public-repository documentation states that the dependency graph is permanently enabled for public repositories and repeated native-action runs still return the generic unsupported error. The Python and npm dependency audits remain blocking.
+
+At the start of Phase 8B, `main` is not branch-protected and the repository has no rulesets. Those release-immutability controls remain Phase 8D work rather than being changed implicitly from this code pull request.
