@@ -41,6 +41,17 @@ jobs:
           data/evidence/vendor
           data/evidence/observations
 
+      - name: Verify community refresh manifests
+        shell: bash
+        run: |
+          shopt -s nullglob
+          manifests=(data/evidence/community-refresh/*.json)
+          for manifest in "${manifests[@]}"; do
+            python -m compatforge_pipeline.community_refresh verify \
+              --repository-root . \
+              --manifest "$manifest"
+          done
+
       - name: Resolver smoke test
         run: >-
           python -m compatforge_pipeline.resolver
