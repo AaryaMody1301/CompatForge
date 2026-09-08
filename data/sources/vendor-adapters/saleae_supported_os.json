@@ -1,0 +1,18 @@
+{
+  "adapter": "saleae_supported_os",
+  "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems",
+  "reviewed_on": "2026-09-08",
+  "facts": {
+    "macos_apple_silicon_declared": true,
+    "ubuntu_64_bit_declared": true,
+    "windows_architectures": [
+      "x64"
+    ],
+    "windows_versions": [
+      "10",
+      "11"
+    ]
+  },
+  "semantic_sha256": "5f5091a744f81dfcf56d96ac01532f1c3592d39b25c25e777521dfe301b17806",
+  "note": "Reviewed semantic baseline only; CompatForge does not mirror the vendor page."
+}

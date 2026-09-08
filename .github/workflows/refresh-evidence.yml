@@ -47,6 +47,25 @@ jobs:
             --timeout-seconds 15 \
             --output build/evidence-review/source-checks.json
 
+      - name: Snapshot permitted vendor semantics
+        shell: bash
+        run: |
+          CHECKED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -m compatforge_pipeline.vendor_adapters snapshot \
+            --checked-at "$CHECKED_AT" \
+            --timeout-seconds 20 \
+            --output build/evidence-review/vendor-snapshot.json
+
+      - name: Compare vendor semantics with reviewed baselines
+        shell: bash
+        run: |
+          python -m compatforge_pipeline.vendor_adapters compare \
+            --snapshot build/evidence-review/vendor-snapshot.json \
+            --baselines data/sources/vendor-adapters \
+            --output build/evidence-review/vendor-changes.json \
+            --summary build/evidence-review/vendor-summary.md
+          cat build/evidence-review/vendor-summary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload review candidate
         uses: actions/upload-artifact@v7
         with:
