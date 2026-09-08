@@ -14,6 +14,14 @@ const artifactDir = path.resolve(
 const browserCandidates = process.env.CHROME_BIN
   ? [process.env.CHROME_BIN]
   : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"];
+const requiredSecurityHeaders = {
+  "content-security-policy": ["base-uri 'self'", "frame-ancestors 'none'", "object-src 'none'"],
+  "permissions-policy": ["camera=()", "microphone=()", "geolocation=()", "browsing-topics=()"],
+  "referrer-policy": ["strict-origin-when-cross-origin"],
+  "strict-transport-security": ["max-age=63072000", "includeSubDomains", "preload"],
+  "x-content-type-options": ["nosniff"],
+  "x-frame-options": ["DENY"],
+};
 
 mkdirSync(artifactDir, { recursive: true });
 
@@ -77,6 +85,28 @@ function screenshot(name, url, width, height) {
     url,
   ]);
   return outputPath;
+}
+
+function assertSecurityHeaders(name, response) {
+  const observed = {};
+  for (const [headerName, expectedParts] of Object.entries(requiredSecurityHeaders)) {
+    const value = response.headers.get(headerName);
+    if (!value) {
+      throw new Error(`${name}: response did not include required ${headerName} header`);
+    }
+    for (const expected of expectedParts) {
+      if (!value.includes(expected)) {
+        throw new Error(
+          `${name}: ${headerName} did not contain ${JSON.stringify(expected)}; received ${JSON.stringify(value)}`,
+        );
+      }
+    }
+    observed[headerName] = value;
+  }
+  if (response.headers.has("x-powered-by")) {
+    throw new Error(`${name}: response exposed the X-Powered-By framework header`);
+  }
+  return observed;
 }
 
 const cases = [
@@ -162,6 +192,7 @@ try {
         `${testCase.name}: expected HTTP ${testCase.status}, received ${response.status}`,
       );
     }
+    const securityHeaders = assertSecurityHeaders(testCase.name, response);
 
     const { html } = dumpDom(url);
     const assertedHtml = html.replaceAll("<!-- -->", "");
@@ -193,6 +224,7 @@ try {
       status: response.status,
       required_text: testCase.includes,
       alternative_text_groups: testCase.includesAny ?? [],
+      security_headers: securityHeaders,
       dom_bytes: Buffer.byteLength(html),
     });
   }
@@ -210,9 +242,10 @@ try {
 }
 
 const report = {
-  report_version: 1,
+  report_version: 2,
   base_url: baseUrl,
   browser: versionProbe.stdout.trim(),
+  required_security_headers: requiredSecurityHeaders,
   passed: failure === null,
   cases: results,
   failure,
@@ -230,15 +263,18 @@ const summary = [
   `- Browser: \`${report.browser}\``,
   `- Result: **${report.passed ? "PASS" : "FAIL"}**`,
   `- Completed cases: **${results.length}/${cases.length}**`,
+  `- Required security headers: **${Object.keys(requiredSecurityHeaders).length}**`,
   "",
-  "| Case | HTTP | Required markers | Alternative groups |",
-  "| --- | ---: | ---: | ---: |",
+  "| Case | HTTP | Required markers | Alternative groups | Security headers |",
+  "| --- | ---: | ---: | ---: | ---: |",
   ...results.map(
     (item) =>
-      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} |`,
+      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} | ${Object.keys(item.security_headers).length} |`,
   ),
   "",
-  failure ? `Failure: ${failure}` : "All required routes rendered their reviewed acceptance markers.",
+  failure
+    ? `Failure: ${failure}`
+    : "All required routes rendered their reviewed acceptance markers and security headers.",
   "",
 ].join("\n");
 writeFileSync(path.join(artifactDir, "summary.md"), summary, "utf8");

@@ -218,7 +218,7 @@ Status: **implementation in progress**.
 
 ### Phase 8A - browser acceptance
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - real headless-Chrome acceptance against the exact production Next.js build in pull-request CI;
 - no new web testing dependency or package-lock expansion;
@@ -233,10 +233,19 @@ See `docs/BROWSER_ACCEPTANCE.md` for the exact contract and local commands.
 
 ### Phase 8B - supply-chain and security gates
 
-- dependency-review enforcement for pull requests;
-- dependency and workflow security policy;
-- production security-header acceptance;
-- secret and high-severity vulnerability gates where supported by the public repository/tooling boundary.
+Status: **implementation complete; merge pending**.
+
+- GitHub native dependency-review signal on pull requests, with platform/API failures reported as warnings instead of replacing repository-owned blocking audits;
+- scheduled/current-state Python and npm dependency audits that hard-fail on known vulnerable dependencies;
+- CodeQL `security-extended` analysis for Python and JavaScript/TypeScript;
+- repository-owned workflow policy rejecting `pull_request_target`, mutable third-party actions, missing top-level permissions and network-to-shell install patterns;
+- weekly Dependabot updates for GitHub Actions, npm and Python dependencies;
+- explicit CSP anti-embedding/base/object restrictions plus HSTS, referrer, permissions, MIME-sniffing and legacy frame headers;
+- browser acceptance verifies every reviewed route receives the required security headers and does not expose `X-Powered-By`;
+- strict Python auditing caught `PYSEC-2026-1845` in `pytest 8.4.2`; the dev dependency was raised to the fixed `pytest>=9.0.3,<10` line rather than exempted;
+- GitHub public-repository secret scanning remains a platform control rather than a repository credential-reading workflow.
+
+Repeated exact-head runs of `actions/dependency-review-action@v5` returned GitHub's generic unsupported-repository error even though GitHub documents the dependency graph as permanently enabled for public repositories. The native signal therefore cannot be the sole blocker. Python and npm audits remain hard failures and cover every package ecosystem currently used by CompatForge. Repository branch/ruleset immutability remains a Phase 8D setting gate. See `docs/SECURITY_HARDENING.md`.
 
 ### Phase 8C - immutable release manifests and attestations
 
