@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from compatforge_pipeline import vendor_adapters
 
 CHECKED_AT = "2026-09-08T07:10:00Z"
