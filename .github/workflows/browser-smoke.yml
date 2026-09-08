@@ -1,0 +1,54 @@
+name: Production browser smoke
+
+on:
+  schedule:
+    - cron: "17 5 * * 2"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Public deployment URL to exercise
+        required: false
+        default: https://compat-forge.vercel.app
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    name: Browser smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Exercise deployed web surface in Chrome
+        env:
+          COMPATFORGE_BROWSER_BASE_URL: ${{ inputs.base_url || 'https://compat-forge.vercel.app' }}
+        run: node scripts/browser-acceptance.mjs
+
+      - name: Add browser summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f build/browser-acceptance/summary.md ]]; then
+            cat build/browser-acceptance/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload browser smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-production-browser-smoke
+          path: apps/web/build/browser-acceptance/
+          if-no-files-found: error
+          retention-days: 14
