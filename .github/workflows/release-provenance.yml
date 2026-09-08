@@ -1,0 +1,138 @@
+name: CompatForge Release Provenance
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/web/**"
+      - "data/**"
+      - "dbt/**"
+      - "pipeline/**"
+      - "tools/package_web_release.py"
+      - "pyproject.toml"
+      - "docs/RELEASE_PROVENANCE.md"
+      - ".github/workflows/release-provenance.yml"
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build-release-bundle:
+    name: Build and verify release bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install release tooling
+        run: python -m pip install -e "."
+
+      - name: Verify reviewed local evidence snapshot
+        run: >-
+          compatforge-snapshot verify
+          --observations data/evidence/observations
+          --support data/evidence/vendor
+
+      - name: Install locked web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build production web artifact
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Package deterministic web build output
+        run: >-
+          python tools/package_web_release.py
+          --web-root apps/web
+          --output build/release/compatforge-web-build.tar.gz
+
+      - name: Generate web SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: apps/web
+          format: spdx-json
+          output-file: build/release/compatforge-web.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Build immutable release manifest
+        run: >-
+          python -m compatforge_pipeline.release_manifest build
+          --repository-root .
+          --release-root build/release
+          --commit "$GITHUB_SHA"
+          --release-name "compatforge-$GITHUB_SHA"
+          --artifact compatforge-web-build.tar.gz
+          --artifact compatforge-web.spdx.json
+
+      - name: Verify release manifest and every recorded digest
+        run: >-
+          python -m compatforge_pipeline.release_manifest verify
+          --repository-root .
+          --release-root build/release
+          --manifest build/release/COMPATFORGE_RELEASE_MANIFEST.json
+          --expected-commit "$GITHUB_SHA"
+
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: compatforge-release-provenance
+          path: build/release/
+          if-no-files-found: error
+          retention-days: 30
+
+  attest-release-bundle:
+    name: Attest release bundle
+    if: github.event_name != 'pull_request'
+    needs: build-release-bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download verified release bundle
+        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: compatforge-release-provenance
+          path: build/release
+
+      - name: Attest release manifest provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: build/release/COMPATFORGE_RELEASE_MANIFEST.json
+
+      - name: Attest web build provenance and SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: build/release/compatforge-web-build.tar.gz
+          sbom-path: build/release/compatforge-web.spdx.json
+
+      - name: Verify generated attestations
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh attestation verify \
+            build/release/COMPATFORGE_RELEASE_MANIFEST.json \
+            --repo "$GITHUB_REPOSITORY"
+          gh attestation verify \
+            build/release/compatforge-web-build.tar.gz \
+            --repo "$GITHUB_REPOSITORY"
