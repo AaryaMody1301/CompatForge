@@ -78,29 +78,33 @@ select ok(
 );
 
 select ok(
-  pg_catalog.position(
-    '5 per hour' in pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure)
+  pg_catalog.strpos(
+    pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
+    '5 per hour'
   ) > 0,
   'hourly rate-limit threshold is encoded in the database function'
 );
 
 select ok(
-  pg_catalog.position(
-    '20 per 24 hours' in pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure)
+  pg_catalog.strpos(
+    pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
+    '20 per 24 hours'
   ) > 0,
   'daily rate-limit threshold is encoded in the database function'
 );
 
 select ok(
-  pg_catalog.position(
-    'auth.uid()' in pg_get_functiondef('public.get_my_submission_dashboard()'::regprocedure)
+  pg_catalog.strpos(
+    pg_get_functiondef('public.get_my_submission_dashboard()'::regprocedure),
+    'auth.uid()'
   ) > 0,
   'dashboard is scoped to the current authenticated user'
 );
 
 select ok(
-  pg_catalog.position(
-    'pg_catalog.coalesce' in pg_get_functiondef('public.submit_community_evidence(jsonb)'::regprocedure)
+  pg_catalog.strpos(
+    pg_get_functiondef('public.submit_community_evidence(jsonb)'::regprocedure),
+    'pg_catalog.coalesce'
   ) = 0,
   'submission RPC does not schema-qualify the COALESCE expression'
 );
