@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 from compatforge_pipeline.contracts import ContractValidationError, validate_document
 from compatforge_pipeline.submission import payload_sha256, submission_fingerprint
 
