@@ -60,7 +60,7 @@ insert into phase6c_fixture(payload) values (
   }'::jsonb
 );
 
-select plan(24);
+select plan(25);
 
 select ok(
   to_regclass('private.community_observation_candidates') is not null,
