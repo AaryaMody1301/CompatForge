@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p build/evidence-review
           AS_OF="$(date -u +%Y-%m-%dT00:00:00Z)"
-          python automation/evidence_review.py report \
+          python -m compatforge_pipeline.evidence_review report \
             --observations data/evidence/observations \
             --support data/evidence/vendor \
             --as-of "$AS_OF" \
@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           CHECKED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python automation/evidence_review.py check-sources \
+          python -m compatforge_pipeline.evidence_review check-sources \
             --report build/evidence-review/freshness.json \
             --checked-at "$CHECKED_AT" \
             --timeout-seconds 15 \
