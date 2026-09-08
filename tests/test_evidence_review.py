@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from automation import evidence_review
+from compatforge_pipeline import evidence_review
 
 EVIDENCE_FIXTURE = Path(__file__).parent / "fixtures" / "evidence"
 AS_OF = "2026-09-07T00:00:00Z"
