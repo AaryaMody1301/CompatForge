@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(11);
 
 select ok(
   exists (
@@ -77,22 +77,32 @@ select ok(
   'anonymous users cannot call the submission dashboard RPC'
 );
 
-select like(
-  pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
-  '%5 per hour%',
+select ok(
+  pg_catalog.position(
+    '5 per hour' in pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure)
+  ) > 0,
   'hourly rate-limit threshold is encoded in the database function'
 );
 
-select like(
-  pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
-  '%20 per 24 hours%',
+select ok(
+  pg_catalog.position(
+    '20 per 24 hours' in pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure)
+  ) > 0,
   'daily rate-limit threshold is encoded in the database function'
 );
 
-select like(
-  pg_get_functiondef('public.get_my_submission_dashboard()'::regprocedure),
-  '%auth.uid()% ',
+select ok(
+  pg_catalog.position(
+    'auth.uid()' in pg_get_functiondef('public.get_my_submission_dashboard()'::regprocedure)
+  ) > 0,
   'dashboard is scoped to the current authenticated user'
+);
+
+select ok(
+  pg_catalog.position(
+    'pg_catalog.coalesce' in pg_get_functiondef('public.submit_community_evidence(jsonb)'::regprocedure)
+  ) = 0,
+  'submission RPC does not schema-qualify the COALESCE expression'
 );
 
 select * from finish();
