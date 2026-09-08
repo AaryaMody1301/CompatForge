@@ -104,7 +104,7 @@ The first `hw-cli-v0.3.0rc1` tag remains intentionally uncreated until repositor
 
 ## Phase 6 - Community evidence
 
-Status: **active**.
+Status: **implementation complete; hosted acceptance pending configuration**.
 
 ### Phase 6A - submission and moderation foundation
 
@@ -121,7 +121,7 @@ Status: **complete**.
 
 ### Phase 6B - authenticated product integration
 
-Status: **active**.
+Status: **complete**.
 
 - GitHub OAuth through Supabase Auth with a PKCE callback route;
 - cookie-based Next.js SSR session refresh;
@@ -132,20 +132,31 @@ Status: **active**.
 - moderation-only duplicate-candidate flags with an opaque submitter-facing signal;
 - no raw diagnostic upload, provider-token persistence, automatic publication, or service-role key in the web app.
 
-Hosted Supabase/GitHub provider configuration and end-to-end OAuth acceptance are deployment gates documented in `docs/AUTH_SETUP.md`.
+Hosted Supabase/GitHub provider configuration and end-to-end OAuth acceptance remain deployment gates documented in `docs/AUTH_SETUP.md`.
 
 ### Phase 6C - moderation and publication
 
-- moderator review queue;
-- validation/reject/accept actions;
-- reviewed conversion to canonical `compatibility_observation` records;
-- publication provenance linking submission -> moderation -> observation;
-- public evidence refresh only after acceptance/publish gates.
+Status: **implementation complete; merge-ready**.
+
+- bounded moderator queue and per-submission review surface that omit submitter identity;
+- reviewer/admin membership checked again at the PostgreSQL boundary;
+- public security-invoker RPC wrappers over private, search-path-pinned security-definer implementations;
+- validation, pending-review, acceptance and rejection actions with append-only audit reasons;
+- deterministic canonicalization blockers for reports that do not satisfy the stricter `compatibility_observation` contract;
+- immutable accepted observation candidates with observation SHA-256 and source-payload SHA-256 provenance;
+- repository-backed canonical evidence URLs that become resolvable through the reviewed static-snapshot merge;
+- admin-only publication receipt requiring the exact accepted candidate hash plus the full merged static-snapshot commit SHA;
+- explicit separation between database acceptance and public static evidence publication;
+- clean-room pgTAP coverage for least privilege, canonicalization, determinism, hashing and publication gates;
+- moderator bootstrap and operating procedure in `docs/MODERATION.md`.
+
+Hosted moderator acceptance still requires a configured Supabase project, at least one allowlisted moderator membership, and a real reviewed publication cycle. Phase 6C does not introduce a service-role key into the web product or auto-write database records into GitHub.
 
 ## Phase 7 - Coverage and freshness
 
 - scheduled upstream checks;
 - additional permitted vendor adapters;
+- automated accepted-community-candidate refresh PRs while preserving review/hash gates;
 - change reports;
 - coverage analytics;
 - stale-evidence workflows.
