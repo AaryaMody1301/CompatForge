@@ -6,10 +6,12 @@ Phase 8B adds enforceable repository and deployed-web security gates without int
 
 `.github/workflows/security.yml` runs GitHub dependency review on pull requests targeting `main` and fails when a dependency change introduces a vulnerability at **high** severity or above.
 
+The dependency-review action requires GitHub's repository dependency graph. The first Phase 8B run reported that dependency review is not currently supported for this repository because the dependency graph is not enabled/available to the action. Keep the dependency-review job as a hard failure until the repository owner enables **Settings → Advanced Security → Dependency graph**. Do not replace the native dependency diff with a weaker `continue-on-error` path.
+
 The same workflow also runs current-state audits so an advisory published after a dependency was merged can still break the scheduled/main security run:
 
 - `npm audit --audit-level=high` against the committed `apps/web/package-lock.json` dependency graph;
-- `pip-audit==2.10.1 --local --strict` after installing the full Python development/data/release dependency surface.
+- `pip-audit==2.10.1 --local --strict --skip-editable` after installing the full Python development/data/release dependency surface. `--skip-editable` excludes CompatForge's own editable source package while retaining the third-party dependency audit.
 
 Dependabot is configured weekly for GitHub Actions, npm and Python dependency updates.
 
@@ -70,6 +72,6 @@ The Phase 8A browser suite now validates all six required security headers on ev
 
 A missing/mutated header, exposed `X-Powered-By`, wrong HTTP status, missing reviewed DOM marker, or runtime error marker fails the gate.
 
-## Remaining repository-setting gate
+## Remaining repository-setting gates
 
-At the start of Phase 8B, `main` is not branch-protected and the repository has no rulesets. Phase 8B records that state rather than changing repository administration settings. Phase 8D must verify and, where the owner chooses, enforce release immutability and required-check settings before `v1.0.0` is accepted.
+Before Phase 8B can be called fully green, the repository dependency graph must be enabled so the native dependency-review action can run. At the start of Phase 8B, `main` is also not branch-protected and the repository has no rulesets. The latter release-immutability controls remain Phase 8D work rather than being changed implicitly from this code pull request.
