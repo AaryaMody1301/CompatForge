@@ -154,7 +154,7 @@ Hosted moderator acceptance still requires a configured Supabase project, at lea
 
 ## Phase 7 - Coverage and freshness
 
-Status: **implementation complete; Phase 7D merge pending**.
+Status: **complete**.
 
 ### Phase 7A - freshness and source-health review
 
@@ -198,7 +198,7 @@ Hosted acceptance requires the Phase 7C Supabase automation identity and GitHub 
 
 ### Phase 7D - coverage and stale-evidence operations
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - deterministic OS-family/architecture coverage matrix per reviewed device;
 - observed, vendor-supported, corroborated and vendor-only reproduction-gap counts;
@@ -214,8 +214,41 @@ Phase 7D scoring is review triage only. Detailed semantics and local commands ar
 
 ## Phase 8 - Release hardening
 
-- browser acceptance tests;
-- security/dependency gates;
-- immutable data release manifests;
-- artifact attestations across web/data release surfaces;
-- release candidate and `v1.0.0` acceptance.
+Status: **implementation in progress**.
+
+### Phase 8A - browser acceptance
+
+Status: **implementation complete; merge pending**.
+
+- real headless-Chrome acceptance against the exact production Next.js build in pull-request CI;
+- no new web testing dependency or package-lock expansion;
+- reviewed home, search, device detail, checker, coverage, contribution-entry and custom-404 routes;
+- HTTP-status and browser-rendered DOM assertions with runtime-error marker rejection;
+- desktop, narrow/mobile and compatibility-result screenshots as review artifacts;
+- JSON and Markdown acceptance reports retained with the CI run;
+- scheduled/manual browser smoke against the stable Vercel production alias with a public URL override;
+- read-only workflow permissions and no automated OAuth, evidence mutation, deployment or publication.
+
+See `docs/BROWSER_ACCEPTANCE.md` for the exact contract and local commands.
+
+### Phase 8B - supply-chain and security gates
+
+- dependency-review enforcement for pull requests;
+- dependency and workflow security policy;
+- production security-header acceptance;
+- secret and high-severity vulnerability gates where supported by the public repository/tooling boundary.
+
+### Phase 8C - immutable release manifests and attestations
+
+- immutable identity/evidence release manifest tying reviewed data to source commits and hashes;
+- web/data release artifact provenance;
+- expanded attestations beyond the existing hardware CLI surface;
+- release-manifest verification commands and CI gates.
+
+### Phase 8D - release candidate and v1.0.0 acceptance
+
+- resolve remaining hosted acceptance/configuration gates;
+- verify repository release immutability settings;
+- cut and verify release candidates;
+- document rollback and release acceptance;
+- publish `v1.0.0` only after every required gate is green.
