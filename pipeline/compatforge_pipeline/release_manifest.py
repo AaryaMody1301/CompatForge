@@ -90,6 +90,7 @@ def _file_entry(root: Path, path: Path) -> dict[str, Any]:
 
 
 def _collect_path(root: Path, relative: str) -> list[dict[str, Any]]:
+    root = root.resolve()
     target = _resolve_within(root, relative)
     if target.is_symlink():
         raise ReleaseManifestError(f"release provenance refuses symlink: {relative}")
