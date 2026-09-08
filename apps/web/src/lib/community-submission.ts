@@ -1,3 +1,8 @@
+import Ajv2020 from "ajv/dist/2020";
+import addFormats from "ajv-formats";
+
+import communitySubmissionSchema from "../../../../schemas/community-submission.schema.json";
+
 import { devices } from "@/lib/catalog";
 
 const OS_FAMILIES = new Set(["windows", "macos", "ubuntu", "linux", "unknown"]);
@@ -7,6 +12,10 @@ const OUTCOMES = new Set(["works", "works_with_conditions", "fails"]);
 const DEVICE_IDS = new Set(devices.map((device) => device.id));
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const TIMEZONE_PATTERN = /(Z|[+-]\d{2}:\d{2})$/i;
+
+const ajv = new Ajv2020({ allErrors: true, strict: true });
+addFormats(ajv);
+const validateCommunitySubmission = ajv.compile(communitySubmissionSchema);
 
 export class SubmissionFormError extends Error {
   constructor(
@@ -186,7 +195,7 @@ export function parseCommunitySubmission(formData: FormData): CommunitySubmissio
     });
   }
 
-  return {
+  const submission: CommunitySubmission = {
     record_type: "community_evidence_submission",
     schema_version: "1.0.0",
     client_submission_id: crypto.randomUUID(),
@@ -228,4 +237,13 @@ export function parseCommunitySubmission(formData: FormData): CommunitySubmissio
     },
     references: referenceUrls(text(formData, "references", 12000, false)),
   };
+
+  if (!validateCommunitySubmission(submission)) {
+    throw new SubmissionFormError(
+      "schema_validation_failed",
+      "Submission did not satisfy the public community JSON Schema",
+    );
+  }
+
+  return submission;
 }
