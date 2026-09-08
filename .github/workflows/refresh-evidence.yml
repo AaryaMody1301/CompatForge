@@ -1,0 +1,55 @@
+name: Review evidence freshness
+
+on:
+  schedule:
+    - cron: "43 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install contract tooling
+        run: python -m pip install -e .
+
+      - name: Build deterministic freshness and coverage report
+        shell: bash
+        run: |
+          mkdir -p build/evidence-review
+          AS_OF="$(date -u +%Y-%m-%dT00:00:00Z)"
+          python -m compatforge_pipeline.evidence_review report \
+            --observations data/evidence/observations \
+            --support data/evidence/vendor \
+            --as-of "$AS_OF" \
+            --output build/evidence-review/freshness.json \
+            --summary build/evidence-review/summary.md
+          cat build/evidence-review/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check referenced upstream sources
+        shell: bash
+        run: |
+          CHECKED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -m compatforge_pipeline.evidence_review check-sources \
+            --report build/evidence-review/freshness.json \
+            --checked-at "$CHECKED_AT" \
+            --timeout-seconds 15 \
+            --output build/evidence-review/source-checks.json
+
+      - name: Upload review candidate
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-evidence-review
+          path: build/evidence-review/
+          retention-days: 30
