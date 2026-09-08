@@ -65,9 +65,11 @@ jobs:
       - uses: vendor/tool@v2
 """,
     )
-    assert validate_workflow(path) == [
-        "external action must use a full commit SHA, or a major tag for GitHub-maintained actions: vendor/tool@v2"
-    ]
+    expected = (
+        "external action must use a full commit SHA, or a major tag for "
+        "GitHub-maintained actions: vendor/tool@v2"
+    )
+    assert validate_workflow(path) == [expected]
 
 
 def test_policy_rejects_network_content_piped_to_shell(tmp_path: Path) -> None:
