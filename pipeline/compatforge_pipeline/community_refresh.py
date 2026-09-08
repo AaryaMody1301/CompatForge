@@ -10,6 +10,7 @@ import re
 import urllib.error
 import urllib.request
 import uuid
+from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -84,10 +85,8 @@ def _post_json(
             return _read_json_response(response, label=label)
     except urllib.error.HTTPError as exc:
         detail = ""
-        try:
+        with suppress(OSError):
             detail = exc.read(2048).decode("utf-8", errors="replace")
-        except OSError:
-            pass
         message = f"{label} failed with HTTP {exc.code}"
         if detail:
             message += f": {detail}"
@@ -201,7 +200,9 @@ def validate_candidate(item: dict[str, Any]) -> dict[str, Any]:
         )
 
     if parsed_observation.get("record_type") != "compatibility_observation":
-        raise CommunityRefreshError(f"candidate is not a compatibility observation: {observation_id}")
+        raise CommunityRefreshError(
+            f"candidate is not a compatibility observation: {observation_id}"
+        )
     if parsed_observation.get("observation_id") != observation_id:
         raise CommunityRefreshError(f"candidate observation ID mismatch: {observation_id}")
     if parsed_observation.get("device_id") != device_id:
@@ -496,7 +497,10 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
 
-    prepare = commands.add_parser("prepare", help="fetch/validate candidates and materialize PR files")
+    prepare = commands.add_parser(
+        "prepare",
+        help="fetch/validate candidates and materialize PR files",
+    )
     prepare.add_argument("--batch", type=Path)
     prepare.add_argument("--repository-root", type=Path, default=Path("."))
     prepare.add_argument("--base-commit", required=True)
