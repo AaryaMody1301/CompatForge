@@ -45,7 +45,10 @@ def _observation() -> dict[str, object]:
         "observed_at": "2026-09-01T10:00:00.000Z",
         "recorded_at": "2026-09-08T05:00:00.000Z",
         "limitations": ["This is a single-host community reproduction."],
-        "notes": f"Reviewed community reproduction. Source payload SHA-256: {SOURCE_PAYLOAD_SHA256}.",
+        "notes": (
+            "Reviewed community reproduction. Source payload SHA-256: "
+            f"{SOURCE_PAYLOAD_SHA256}."
+        ),
     }
 
 
