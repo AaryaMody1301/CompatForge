@@ -154,7 +154,7 @@ Hosted moderator acceptance still requires a configured Supabase project, at lea
 
 ## Phase 7 - Coverage and freshness
 
-Status: **implementation in progress**.
+Status: **implementation complete; Phase 7D merge pending**.
 
 ### Phase 7A - freshness and source-health review
 
@@ -182,7 +182,7 @@ Status: **complete**.
 
 ### Phase 7C - accepted-community refresh preparation
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - dedicated least-privilege refresh identities separate from reviewer/admin membership;
 - bounded accepted/unpublished refresh RPC returning both candidate JSON and its exact hashed PostgreSQL text;
@@ -198,10 +198,19 @@ Hosted acceptance requires the Phase 7C Supabase automation identity and GitHub 
 
 ### Phase 7D - coverage and stale-evidence operations
 
-- broader coverage analytics;
-- prioritized stale-evidence work queues;
-- adapter expansion for additional permitted vendor sources;
-- review dashboards/change summaries driven by Phase 7A/7B artifacts.
+Status: **implementation complete; merge pending**.
+
+- deterministic OS-family/architecture coverage matrix per reviewed device;
+- observed, vendor-supported, corroborated and vendor-only reproduction-gap counts;
+- deterministic `P0`-`P3` work queue combining age, source health and semantic-change signals;
+- explicit source-health, stale/aging evidence, vendor-change and reproduction-gap task types;
+- combined weekly Markdown review dashboard and JSON operations artifact;
+- report SHA-256 provenance over the operations output;
+- FTDI D2XX exact-host adapter covering reviewed Windows, Linux and macOS driver facts;
+- reviewed D2XX semantic baseline without mirroring vendor HTML;
+- no automatic canonical evidence mutation or publication.
+
+Phase 7D scoring is review triage only. Detailed semantics and local commands are documented in `docs/EVIDENCE_OPERATIONS.md`.
 
 ## Phase 8 - Release hardening
 
