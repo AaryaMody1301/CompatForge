@@ -108,6 +108,8 @@ Status: **active**.
 
 ### Phase 6A - submission and moderation foundation
 
+Status: **complete**.
+
 - bounded `community_evidence_submission` public contract;
 - deterministic duplicate-candidate fingerprinting;
 - version-controlled Supabase/PostgreSQL migration;
@@ -119,12 +121,18 @@ Status: **active**.
 
 ### Phase 6B - authenticated product integration
 
-- GitHub OAuth through Supabase Auth;
-- Next.js server-side session handling;
-- submit/review-status UI;
-- server-side JSON Schema validation before database submission;
-- rate limits and abuse controls;
-- duplicate-candidate surfacing.
+Status: **active**.
+
+- GitHub OAuth through Supabase Auth with a PKCE callback route;
+- cookie-based Next.js SSR session refresh;
+- authorization rechecks in server actions/routes plus database RLS;
+- authenticated submission/status UI;
+- server-side allowlist parsing plus Draft 2020-12 JSON Schema validation;
+- database-enforced rolling limits of 5 submissions/hour and 20/24 hours per user;
+- moderation-only duplicate-candidate flags with an opaque submitter-facing signal;
+- no raw diagnostic upload, provider-token persistence, automatic publication, or service-role key in the web app.
+
+Hosted Supabase/GitHub provider configuration and end-to-end OAuth acceptance are deployment gates documented in `docs/AUTH_SETUP.md`.
 
 ### Phase 6C - moderation and publication
 

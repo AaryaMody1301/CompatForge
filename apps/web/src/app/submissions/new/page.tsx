@@ -31,6 +31,7 @@ const ERRORS: Record<string, string> = {
   invalid_reference: "Reference links must be valid HTTPS URLs.",
   consent_required: "Anonymized-publication consent is required before entering review.",
   too_many_items: "One of the list fields contains too many items.",
+  schema_validation_failed: "The normalized submission did not satisfy the public JSON Schema.",
   rate_limit: "Submission rate limit reached. Try again after the rolling window clears.",
   submit_failed: "The submission could not be accepted by the moderation database.",
 };
