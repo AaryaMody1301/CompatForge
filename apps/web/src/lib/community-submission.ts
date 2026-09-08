@@ -13,7 +13,7 @@ const DEVICE_IDS = new Set(devices.map((device) => device.id));
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const TIMEZONE_PATTERN = /(Z|[+-]\d{2}:\d{2})$/i;
 
-const ajv = new Ajv2020({ allErrors: true, strict: true });
+const ajv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(ajv);
 const validateCommunitySubmission = ajv.compile(communitySubmissionSchema);
 
