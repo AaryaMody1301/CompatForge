@@ -164,22 +164,26 @@ try {
     }
 
     const { html } = dumpDom(url);
-    if (!html.includes("<main")) {
+    const assertedHtml = html.replaceAll("<!-- -->", "");
+    if (!assertedHtml.includes("<main")) {
       throw new Error(`${testCase.name}: browser DOM did not contain the application <main>`);
     }
     for (const expected of testCase.includes) {
-      if (!html.includes(expected)) {
+      if (!assertedHtml.includes(expected)) {
         throw new Error(`${testCase.name}: browser DOM did not contain ${JSON.stringify(expected)}`);
       }
     }
     for (const alternatives of testCase.includesAny ?? []) {
-      if (!alternatives.some((expected) => html.includes(expected))) {
+      if (!alternatives.some((expected) => assertedHtml.includes(expected))) {
         throw new Error(
           `${testCase.name}: browser DOM did not contain any of ${JSON.stringify(alternatives)}`,
         );
       }
     }
-    if (html.includes("Application error") || html.includes("Internal Server Error")) {
+    if (
+      assertedHtml.includes("Application error") ||
+      assertedHtml.includes("Internal Server Error")
+    ) {
       throw new Error(`${testCase.name}: browser DOM contained a framework/runtime error marker`);
     }
 
