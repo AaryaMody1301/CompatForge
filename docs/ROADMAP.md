@@ -136,7 +136,7 @@ Hosted Supabase/GitHub provider configuration and end-to-end OAuth acceptance re
 
 ### Phase 6C - moderation and publication
 
-Status: **implementation complete; merge-ready**.
+Status: **complete**.
 
 - bounded moderator queue and per-submission review surface that omit submitter identity;
 - reviewer/admin membership checked again at the PostgreSQL boundary;
@@ -154,12 +154,44 @@ Hosted moderator acceptance still requires a configured Supabase project, at lea
 
 ## Phase 7 - Coverage and freshness
 
-- scheduled upstream checks;
-- additional permitted vendor adapters;
-- automated accepted-community-candidate refresh PRs while preserving review/hash gates;
-- change reports;
-- coverage analytics;
-- stale-evidence workflows.
+Status: **implementation in progress**.
+
+### Phase 7A - freshness and source-health review
+
+Status: **complete**.
+
+- scheduled read-only upstream source checks;
+- deterministic evidence freshness and per-device coverage reports;
+- aging/stale review queues using the existing 180/365-day analytical thresholds;
+- exact evidence/source references and report SHA-256 provenance;
+- bounded source status/final-URL/ETag/Last-Modified signals;
+- no automatic evidence mutation or publication.
+
+### Phase 7B - permitted vendor adapters and semantic change reports
+
+Status: **implementation complete; merge pending**.
+
+- exact-host HTTPS allowlisting for source-specific vendor adapters;
+- bounded FTDI VCP semantic extraction;
+- bounded Saleae supported-OS semantic extraction;
+- version-controlled reviewed semantic baselines without mirroring vendor pages;
+- semantic SHA-256 comparison that ignores irrelevant HTML/template churn;
+- exact changed-field reporting;
+- integration with the weekly Phase 7 review artifact workflow;
+- review-only output with no canonical evidence rewrite.
+
+### Phase 7C - accepted-community refresh preparation
+
+- automated accepted-community-candidate refresh PR preparation while preserving candidate SHA-256, review, CI, merge and publication-receipt gates;
+- deterministic publication batches and repository provenance;
+- no database-to-main direct write path.
+
+### Phase 7D - coverage and stale-evidence operations
+
+- broader coverage analytics;
+- prioritized stale-evidence work queues;
+- adapter expansion for additional permitted vendor sources;
+- review dashboards/change summaries driven by Phase 7A/7B artifacts.
 
 ## Phase 8 - Release hardening
 
