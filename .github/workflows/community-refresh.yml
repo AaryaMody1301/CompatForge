@@ -20,6 +20,7 @@ jobs:
       - name: Checkout canonical branch
         uses: actions/checkout@v6
         with:
+          ref: main
           persist-credentials: false
 
       - name: Check hosted refresh configuration
@@ -71,9 +72,10 @@ jobs:
         run: |
           mkdir -p build/community-refresh
           PREPARED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          BASE_COMMIT="$(git rev-parse HEAD)"
           python -m compatforge_pipeline.community_refresh prepare \
             --repository-root . \
-            --base-commit "$GITHUB_SHA" \
+            --base-commit "$BASE_COMMIT" \
             --prepared-at "$PREPARED_AT" \
             --result build/community-refresh/result.json
           python - <<'PY' >> "$GITHUB_OUTPUT"
