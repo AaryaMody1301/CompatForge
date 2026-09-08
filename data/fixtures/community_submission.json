@@ -1,0 +1,55 @@
+{
+  "record_type": "community_evidence_submission",
+  "schema_version": "1.0.0",
+  "client_submission_id": "11111111-2222-4333-8444-555555555555",
+  "prepared_at": "2026-09-07T12:00:00Z",
+  "evidence_ready": false,
+  "target_device_id": "usb:0403:6001",
+  "handoff": {
+    "schema_version": "1.0.0",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "user_approved_export": true
+  },
+  "configuration": {
+    "host": {
+      "manufacturer": "Synthetic Systems",
+      "model": "Fixture Host"
+    },
+    "operating_system": {
+      "family": "windows",
+      "version": "11",
+      "build": "synthetic"
+    },
+    "architecture": "arm64",
+    "connection_path": "unspecified",
+    "drivers": [
+      {
+        "name": "Synthetic VCP Driver",
+        "provider": "Fixture Vendor",
+        "version": "1.0-test"
+      }
+    ]
+  },
+  "reproduction": {
+    "outcome": "works",
+    "observed_at": "2026-09-07T11:30:00Z",
+    "steps_summary": "Synthetic fixture: connected the target adapter and completed a test data transfer.",
+    "conditions": [],
+    "limitations": [
+      "Synthetic contract fixture only; this record is not real compatibility evidence."
+    ],
+    "software_version": "fixture-1.0"
+  },
+  "publication": {
+    "anonymized_publication": true,
+    "consent_version": "1.0"
+  },
+  "privacy": {
+    "contains_raw_diagnostic": false,
+    "contains_serial_numbers": false,
+    "contains_network_identifiers": false,
+    "contains_unrelated_usb_inventory": false,
+    "automatic_publication": false
+  },
+  "references": []
+}
