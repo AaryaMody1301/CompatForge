@@ -219,3 +219,41 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Start production server
+        shell: bash
+        run: |
+          mkdir -p build/browser-acceptance
+          nohup npm run start -- --hostname 127.0.0.1 --port 3100 \
+            > build/browser-acceptance/server.log 2>&1 &
+          echo $! > build/browser-acceptance/server.pid
+
+      - name: Browser acceptance
+        env:
+          COMPATFORGE_BROWSER_BASE_URL: http://127.0.0.1:3100
+        run: node scripts/browser-acceptance.mjs
+
+      - name: Add browser summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f build/browser-acceptance/summary.md ]]; then
+            cat build/browser-acceptance/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload browser acceptance artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-browser-acceptance
+          path: apps/web/build/browser-acceptance/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Stop production server
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f build/browser-acceptance/server.pid ]]; then
+            kill "$(cat build/browser-acceptance/server.pid)" || true
+          fi
