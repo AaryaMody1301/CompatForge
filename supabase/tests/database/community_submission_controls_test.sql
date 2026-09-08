@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(11);
+select plan(14);
 
 select ok(
   exists (
@@ -49,14 +49,47 @@ select ok(
 );
 
 select ok(
-  (
+  not (
     select p.prosecdef
     from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname = 'get_my_submission_dashboard'
   ),
-  'submission dashboard function is security definer'
+  'public dashboard RPC is a security-invoker wrapper'
+);
+
+select ok(
+  (
+    select p.prosecdef
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'get_my_submission_dashboard_impl'
+  ),
+  'private dashboard implementation is security definer'
+);
+
+select ok(
+  not (
+    select p.prosecdef
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'submit_community_evidence'
+  ),
+  'public submission RPC is a security-invoker wrapper'
+);
+
+select ok(
+  (
+    select p.prosecdef
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname = 'submit_community_evidence_impl'
+  ),
+  'private submission implementation is security definer'
 );
 
 select ok(
@@ -95,18 +128,18 @@ select ok(
 
 select ok(
   pg_catalog.strpos(
-    pg_get_functiondef('public.get_my_submission_dashboard()'::regprocedure),
+    pg_get_functiondef('private.get_my_submission_dashboard_impl()'::regprocedure),
     'auth.uid()'
   ) > 0,
-  'dashboard is scoped to the current authenticated user'
+  'private dashboard implementation is scoped to the current authenticated user'
 );
 
 select ok(
   pg_catalog.strpos(
-    pg_get_functiondef('public.submit_community_evidence(jsonb)'::regprocedure),
+    pg_get_functiondef('private.submit_community_evidence_impl(jsonb)'::regprocedure),
     'pg_catalog.coalesce'
   ) = 0,
-  'submission RPC does not schema-qualify the COALESCE expression'
+  'submission implementation does not schema-qualify the COALESCE expression'
 );
 
 select * from finish();

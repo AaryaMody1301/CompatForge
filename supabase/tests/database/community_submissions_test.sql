@@ -35,8 +35,8 @@ select is(
     where schemaname = 'public'
       and tablename = 'evidence_submissions'
   ),
-  2,
-  'exactly two read policies protect evidence_submissions'
+  1,
+  'direct submission reads are limited to the submitter policy; moderators use bounded RPCs'
 );
 
 select ok(
