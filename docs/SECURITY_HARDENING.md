@@ -11,7 +11,9 @@ The dependency-review action requires GitHub's repository dependency graph. The 
 The same workflow also runs current-state audits so an advisory published after a dependency was merged can still break the scheduled/main security run:
 
 - `npm audit --audit-level=high` against the committed `apps/web/package-lock.json` dependency graph;
-- `pip-audit==2.10.1 --local --strict --skip-editable` after installing the full Python development/data/release dependency surface. `--skip-editable` excludes CompatForge's own editable source package while retaining the third-party dependency audit.
+- a Python audit over an exact `pip list --local --format=freeze --exclude-editable` snapshot after installing the full development/data/release dependency surface, then `pip-audit==2.10.1 --strict --no-deps` against those pinned third-party versions.
+
+The explicit installed-package snapshot excludes CompatForge's own editable source package while retaining strict collection behavior for every third-party distribution actually present in the CI environment.
 
 Dependabot is configured weekly for GitHub Actions, npm and Python dependency updates.
 
