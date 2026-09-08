@@ -203,7 +203,7 @@ export default async function ModerationDetailPage({ params, searchParams }: Pag
         <h1>{device?.name ?? submission.device_id}</h1>
         <p className="lede">
           Review the privacy-minimized reproduction, publication blockers, audit history, and any
-          canonical candidate without exposing the submitter's identity in this product surface.
+          canonical candidate without exposing submitter identity in this product surface.
         </p>
         <div className="inline-meta">
           <span>Role: {String(role)}</span>
