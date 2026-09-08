@@ -37,6 +37,7 @@ compatforge-diagnose = "compatforge_pipeline.diagnostics:main"
 compatforge-snapshot = "compatforge_pipeline.local_snapshot:main"
 compatforge-explain = "compatforge_pipeline.local_explain:main"
 compatforge-submission = "compatforge_pipeline.submission:main"
+compatforge-release = "compatforge_pipeline.release_manifest:main"
 
 [tool.setuptools.packages.find]
 where = ["pipeline"]
