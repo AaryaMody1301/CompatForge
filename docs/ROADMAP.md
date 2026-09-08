@@ -104,7 +104,7 @@ The first `hw-cli-v0.3.0rc1` tag remains intentionally uncreated until repositor
 
 ## Phase 6 - Community evidence
 
-Status: **active**.
+Status: **implementation complete; hosted acceptance pending configuration**.
 
 ### Phase 6A - submission and moderation foundation
 
@@ -136,7 +136,7 @@ Hosted Supabase/GitHub provider configuration and end-to-end OAuth acceptance re
 
 ### Phase 6C - moderation and publication
 
-Status: **implementation complete; merge verification in progress**.
+Status: **implementation complete; merge-ready**.
 
 - bounded moderator queue and per-submission review surface that omit submitter identity;
 - reviewer/admin membership checked again at the PostgreSQL boundary;
@@ -144,6 +144,7 @@ Status: **implementation complete; merge verification in progress**.
 - validation, pending-review, acceptance and rejection actions with append-only audit reasons;
 - deterministic canonicalization blockers for reports that do not satisfy the stricter `compatibility_observation` contract;
 - immutable accepted observation candidates with observation SHA-256 and source-payload SHA-256 provenance;
+- repository-backed canonical evidence URLs that become resolvable through the reviewed static-snapshot merge;
 - admin-only publication receipt requiring the exact accepted candidate hash plus the full merged static-snapshot commit SHA;
 - explicit separation between database acceptance and public static evidence publication;
 - clean-room pgTAP coverage for least privilege, canonicalization, determinism, hashing and publication gates;
