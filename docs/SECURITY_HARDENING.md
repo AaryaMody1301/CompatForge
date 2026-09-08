@@ -15,6 +15,8 @@ The same workflow also runs current-state audits so an advisory published after 
 
 The explicit installed-package snapshot excludes CompatForge's own editable source package while retaining strict collection behavior for every third-party distribution actually present in the CI environment.
 
+The first successful strict Python dependency collection exposed `PYSEC-2026-1845` in `pytest 8.4.2`. CompatForge did not add a dev-only exception: the development dependency floor is now `pytest>=9.0.3,<10`, the fixed major line identified by the advisory, and the full Python contract suite plus strict dependency audit pass with the remediated dependency.
+
 Dependabot is configured weekly for GitHub Actions, npm and Python dependency updates.
 
 ## Code scanning
