@@ -233,7 +233,7 @@ See `docs/BROWSER_ACCEPTANCE.md` for the exact contract and local commands.
 
 ### Phase 8B - supply-chain and security gates
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - GitHub native dependency-review signal on pull requests, with platform/API failures reported as warnings instead of replacing repository-owned blocking audits;
 - scheduled/current-state Python and npm dependency audits that hard-fail on known vulnerable dependencies;
@@ -249,10 +249,22 @@ Repeated exact-head runs of `actions/dependency-review-action@v5` returned GitHu
 
 ### Phase 8C - immutable release manifests and attestations
 
-- immutable identity/evidence release manifest tying reviewed data to source commits and hashes;
-- web/data release artifact provenance;
-- expanded attestations beyond the existing hardware CLI surface;
-- release-manifest verification commands and CI gates.
+Status: **implementation complete; merge pending**.
+
+- deterministic top-level release manifest tied to an exact full Git source commit;
+- per-file SHA-256/size provenance for reviewed identity, canonical evidence, vendor semantic baselines, packaged offline evidence, web source/lock inputs and dbt/transformation inputs;
+- canonical per-group SHA-256 values plus a top-level manifest self-hash;
+- deterministic Next.js release packaging with normalized archive metadata and transient cache exclusion;
+- web SPDX SBOM plus conventional `SHA256SUMS.txt` output;
+- `compatforge-release` build/verify commands that fail on source drift, artifact tampering, manifest edits or commit mismatch;
+- read-only pull-request release-bundle workflow that builds and immediately re-verifies every recorded digest;
+- manual/tag-only GitHub attestation job with narrowly scoped OIDC/attestation permissions;
+- provenance attestation for the top-level release manifest and provenance+SBOM attestation for the web build artifact;
+- immediate `gh attestation verify` checks after non-PR signing;
+- regression coverage for deterministic output, tampering, full-commit enforcement and relative repository/release roots;
+- existing six-platform hardware CLI archive/SBOM attestations remain separate and intact.
+
+Tagged releases describe the reviewed repository state at the tag commit and do not fetch mutable upstream identity data during release construction. See `docs/RELEASE_PROVENANCE.md`.
 
 ### Phase 8D - release candidate and v1.0.0 acceptance
 
