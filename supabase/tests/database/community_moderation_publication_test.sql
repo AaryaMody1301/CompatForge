@@ -247,8 +247,8 @@ select is(
     ) #>> '{evidence,source_url}'
     from phase6c_fixture
   ),
-  'https://compatforge.dev/evidence/obs_community_11111111111111111111111111111111',
-  'canonical community evidence reserves a stable public evidence URL'
+  'https://github.com/AaryaMody1301/CompatForge/blob/main/data/evidence/observations/obs_community_11111111111111111111111111111111.json',
+  'canonical community evidence points at its reviewed static repository record'
 );
 
 select ok(
