@@ -233,7 +233,7 @@ See `docs/BROWSER_ACCEPTANCE.md` for the exact contract and local commands.
 
 ### Phase 8B - supply-chain and security gates
 
-Status: **implementation complete; merge pending**.
+Status: **implementation complete; dependency-graph activation and merge pending**.
 
 - pull-request dependency review that rejects newly introduced high-severity vulnerabilities;
 - scheduled/current-state Python and npm dependency audits;
@@ -244,7 +244,7 @@ Status: **implementation complete; merge pending**.
 - browser acceptance verifies every reviewed route receives the required security headers and does not expose `X-Powered-By`;
 - GitHub public-repository secret scanning remains a platform control rather than a repository credential-reading workflow.
 
-Repository branch/ruleset immutability remains a Phase 8D setting gate; Phase 8B does not silently mutate repository administration settings. See `docs/SECURITY_HARDENING.md`.
+The native dependency-review action remains intentionally blocking until GitHub's dependency graph is enabled/available for the repository. Repository branch/ruleset immutability remains a Phase 8D setting gate. See `docs/SECURITY_HARDENING.md`.
 
 ### Phase 8C - immutable release manifests and attestations
 
