@@ -5,11 +5,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import socket
 import urllib.error
 import urllib.request
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +24,7 @@ def _parse_timestamp(value: str) -> datetime:
     parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         raise ValueError(f"timestamp must include a timezone: {value}")
-    return parsed.astimezone(timezone.utc)
+    return parsed.astimezone(UTC)
 
 
 def _canonical_sha256(payload: Any) -> str:
@@ -261,7 +260,7 @@ def check_source(url: str, *, timeout_seconds: float) -> dict[str, Any]:
                 "last_modified": exc.headers.get("Last-Modified") if exc.headers else None,
                 "error": f"http_{exc.code}",
             }
-    except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
         return {
             "ok": False,
             "status_code": None,
@@ -283,7 +282,7 @@ def check_source(url: str, *, timeout_seconds: float) -> dict[str, Any]:
             "last_modified": exc.headers.get("Last-Modified") if exc.headers else None,
             "error": f"http_{exc.code}",
         }
-    except (urllib.error.URLError, TimeoutError, socket.timeout, OSError) as exc:
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
         return {
             "ok": False,
             "status_code": None,
