@@ -1,0 +1,14 @@
+{
+  "adapter": "ftdi_vcp",
+  "source_url": "https://ftdichip.com/drivers/vcp-drivers/",
+  "reviewed_on": "2026-09-08",
+  "facts": {
+    "installer_arm64_note": true,
+    "windows_desktop_arm64_version": "2.12.36.20A",
+    "windows_desktop_release_date": "2025-03-04",
+    "windows_desktop_x64_version": "2.12.36.20",
+    "windows_universal_arm64_version": "2.12.36.20UA"
+  },
+  "semantic_sha256": "8574c5810f1defd56a005b8b9a642078234ed25e1a9485ccee7c8c70b618da0c",
+  "note": "Reviewed semantic baseline only; CompatForge does not mirror the vendor page."
+}
