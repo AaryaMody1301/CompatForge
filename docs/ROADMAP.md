@@ -242,6 +242,7 @@ Status: **implementation complete; dependency-graph activation and merge pending
 - weekly Dependabot updates for GitHub Actions, npm and Python dependencies;
 - explicit CSP anti-embedding/base/object restrictions plus HSTS, referrer, permissions, MIME-sniffing and legacy frame headers;
 - browser acceptance verifies every reviewed route receives the required security headers and does not expose `X-Powered-By`;
+- strict Python auditing caught `PYSEC-2026-1845` in `pytest 8.4.2`; the dev dependency was raised to the fixed `pytest>=9.0.3,<10` line rather than exempted;
 - GitHub public-repository secret scanning remains a platform control rather than a repository credential-reading workflow.
 
 The native dependency-review action remains intentionally blocking until GitHub's dependency graph is enabled/available for the repository. Repository branch/ruleset immutability remains a Phase 8D setting gate. See `docs/SECURITY_HARDENING.md`.
