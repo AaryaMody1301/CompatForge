@@ -58,7 +58,7 @@ Status: **complete**.
 
 ## Phase 5 - Local diagnostic agent
 
-Status: **active**.
+Status: **implementation complete; first immutable release candidate pending repository-setting audit**.
 
 ### Phase 5A - privacy-first collection foundation
 
@@ -88,28 +88,51 @@ Status: **complete**.
 
 ### Phase 5C - distributable release and explicit handoff
 
-Status: **active**.
+Status: **implementation complete**.
 
 - unified `compatforge-hw` end-user CLI;
 - packaged JSON Schema contracts for source-independent/frozen validation;
 - explicit `--approve-export` contribution handoff with `evidence_ready: false`;
 - native standalone builds for Linux, Windows, and macOS on x86_64/arm64;
 - SPDX SBOMs and SHA-256 release manifests;
-- GitHub provenance and SBOM attestations outside pull requests;
-- pull-request smoke verification of frozen binaries;
+- GitHub provenance and SBOM attestation workflow;
+- pull-request smoke verification of all six frozen binaries;
 - end-user installation, verification, and signing-boundary documentation;
 - no automatic upload.
 
-Phase 5 is complete once Phase 5C's cross-platform release workflow is green and the first release-candidate process has been audited. Native Apple notarization and Windows Authenticode are not falsely claimed by provenance attestations.
+The first `hw-cli-v0.3.0rc1` tag remains intentionally uncreated until repository release immutability is confirmed. This operational gate does not weaken or get folded into Phase 6 code.
 
 ## Phase 6 - Community evidence
 
-- authenticated submissions;
-- PostgreSQL/Supabase moderation store;
-- row-level security;
-- validation/review/publish lifecycle;
-- abuse and duplicate controls;
-- explicit conversion of reviewed handoff context into evidence only after user-supplied outcome/reproduction details.
+Status: **active**.
+
+### Phase 6A - submission and moderation foundation
+
+- bounded `community_evidence_submission` public contract;
+- deterministic duplicate-candidate fingerprinting;
+- version-controlled Supabase/PostgreSQL migration;
+- authenticated submission RPC with critical privacy checks;
+- RLS-protected submitter reads;
+- private moderator membership, decision metadata and lifecycle event tables;
+- deterministic lifecycle transition guard;
+- pgTAP RLS/schema tests in CI.
+
+### Phase 6B - authenticated product integration
+
+- GitHub OAuth through Supabase Auth;
+- Next.js server-side session handling;
+- submit/review-status UI;
+- server-side JSON Schema validation before database submission;
+- rate limits and abuse controls;
+- duplicate-candidate surfacing.
+
+### Phase 6C - moderation and publication
+
+- moderator review queue;
+- validation/reject/accept actions;
+- reviewed conversion to canonical `compatibility_observation` records;
+- publication provenance linking submission -> moderation -> observation;
+- public evidence refresh only after acceptance/publish gates.
 
 ## Phase 7 - Coverage and freshness
 

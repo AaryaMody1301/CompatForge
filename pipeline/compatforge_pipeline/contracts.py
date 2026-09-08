@@ -20,6 +20,7 @@ _SCHEMA_BY_RECORD_TYPE = {
     "diagnostic_manifest": "diagnostic-manifest.schema.json",
     "local_compatibility_explanation": "local-explanation.schema.json",
     "contribution_handoff": "contribution-handoff.schema.json",
+    "community_evidence_submission": "community-submission.schema.json",
 }
 
 
