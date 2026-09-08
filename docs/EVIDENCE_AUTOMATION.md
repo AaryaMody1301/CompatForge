@@ -22,7 +22,7 @@ Phase 7A deliberately reuses the analytical data platform's existing thresholds:
 
 Observations are aged from `observed_at`. Support statements are aged from `reviewed_at`. The `as_of` timestamp is explicit, and future-dated evidence fails the report rather than being silently coerced.
 
-`automation/evidence_review.py report` emits:
+`python -m compatforge_pipeline.evidence_review report` emits:
 
 - a canonical JSON freshness/coverage report;
 - a SHA-256 over the deterministic report payload;
@@ -36,7 +36,7 @@ The report is deterministic for the same reviewed corpus and the same `as_of` ti
 
 ## Upstream source checks
 
-`automation/evidence_review.py check-sources` performs bounded, read-only HTTP checks for the URLs already present in the reviewed evidence. It records the response status, final URL, ETag and Last-Modified header when available.
+`python -m compatforge_pipeline.evidence_review check-sources` performs bounded, read-only HTTP checks for the URLs already present in the reviewed evidence. It records the response status, final URL, ETag and Last-Modified header when available.
 
 A broken or redirected upstream URL is a review signal. It does not mutate an observation, support statement, claim state, source URL or publication record.
 
