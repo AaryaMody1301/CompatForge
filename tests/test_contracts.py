@@ -14,7 +14,7 @@ def load(path: Path) -> dict:
 
 
 def test_all_public_fixtures_validate() -> None:
-    assert validate_paths([ROOT / "data" / "fixtures"]) == 3
+    assert validate_paths([ROOT / "data" / "fixtures"]) == 4
 
 
 def test_unknown_observation_outcome_is_rejected() -> None:
