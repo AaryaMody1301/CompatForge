@@ -132,9 +132,12 @@ const cases = [
     name: "submissions-unauthenticated",
     pathname: "/submissions",
     status: 200,
-    includes: [
-      "Reproductions enter a review queue, not the evidence corpus.",
-      "Community auth is not configured",
+    includes: ["Reproductions enter a review queue, not the evidence corpus."],
+    includesAny: [
+      [
+        "Community auth is not configured",
+        "Use GitHub only to establish a Supabase user identity.",
+      ],
     ],
   },
   {
@@ -169,6 +172,13 @@ try {
         throw new Error(`${testCase.name}: browser DOM did not contain ${JSON.stringify(expected)}`);
       }
     }
+    for (const alternatives of testCase.includesAny ?? []) {
+      if (!alternatives.some((expected) => html.includes(expected))) {
+        throw new Error(
+          `${testCase.name}: browser DOM did not contain any of ${JSON.stringify(alternatives)}`,
+        );
+      }
+    }
     if (html.includes("Application error") || html.includes("Internal Server Error")) {
       throw new Error(`${testCase.name}: browser DOM contained a framework/runtime error marker`);
     }
@@ -177,7 +187,8 @@ try {
       name: testCase.name,
       pathname: testCase.pathname,
       status: response.status,
-      expected_text: testCase.includes,
+      required_text: testCase.includes,
+      alternative_text_groups: testCase.includesAny ?? [],
       dom_bytes: Buffer.byteLength(html),
     });
   }
@@ -216,9 +227,12 @@ const summary = [
   `- Result: **${report.passed ? "PASS" : "FAIL"}**`,
   `- Completed cases: **${results.length}/${cases.length}**`,
   "",
-  "| Case | HTTP | Browser DOM assertions |",
-  "| --- | ---: | ---: |",
-  ...results.map((item) => `| \`${item.name}\` | ${item.status} | ${item.expected_text.length} |`),
+  "| Case | HTTP | Required markers | Alternative groups |",
+  "| --- | ---: | ---: | ---: |",
+  ...results.map(
+    (item) =>
+      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} |`,
+  ),
   "",
   failure ? `Failure: ${failure}` : "All required routes rendered their reviewed acceptance markers.",
   "",
