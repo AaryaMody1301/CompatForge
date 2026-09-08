@@ -238,7 +238,9 @@ def verify_manifest(
 
     actual_groups = collect_source_groups(repository_root)
     if actual_groups != manifest.get("source_groups"):
-        raise ReleaseManifestError("reviewed repository source hashes do not match release manifest")
+        raise ReleaseManifestError(
+            "reviewed repository source hashes do not match release manifest"
+        )
 
     recorded_artifacts = manifest.get("release_artifacts")
     if not isinstance(recorded_artifacts, list) or not recorded_artifacts:
