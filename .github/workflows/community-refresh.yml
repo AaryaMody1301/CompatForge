@@ -1,0 +1,155 @@
+name: Prepare accepted community refresh
+
+on:
+  schedule:
+    - cron: "23 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: community-evidence-refresh
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout canonical branch
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Check hosted refresh configuration
+        id: config
+        env:
+          SUPABASE_URL: ${{ secrets.COMPATFORGE_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.COMPATFORGE_SUPABASE_PUBLISHABLE_KEY }}
+          REFRESH_EMAIL: ${{ secrets.COMPATFORGE_REFRESH_EMAIL }}
+          REFRESH_PASSWORD: ${{ secrets.COMPATFORGE_REFRESH_PASSWORD }}
+          REFRESH_GITHUB_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          ready=true
+          for value in \
+            "$SUPABASE_URL" \
+            "$SUPABASE_KEY" \
+            "$REFRESH_EMAIL" \
+            "$REFRESH_PASSWORD" \
+            "$REFRESH_GITHUB_TOKEN"; do
+            if [ -z "$value" ]; then
+              ready=false
+            fi
+          done
+          echo "ready=$ready" >> "$GITHUB_OUTPUT"
+          if [ "$ready" != "true" ]; then
+            echo "Community refresh is not configured; no repository write was attempted." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Set up Python
+        if: steps.config.outputs.ready == 'true'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install contract tooling
+        if: steps.config.outputs.ready == 'true'
+        run: python -m pip install -e ".[dev]"
+
+      - name: Fetch and materialize accepted candidates
+        if: steps.config.outputs.ready == 'true'
+        id: prepare
+        env:
+          COMPATFORGE_SUPABASE_URL: ${{ secrets.COMPATFORGE_SUPABASE_URL }}
+          COMPATFORGE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.COMPATFORGE_SUPABASE_PUBLISHABLE_KEY }}
+          COMPATFORGE_REFRESH_EMAIL: ${{ secrets.COMPATFORGE_REFRESH_EMAIL }}
+          COMPATFORGE_REFRESH_PASSWORD: ${{ secrets.COMPATFORGE_REFRESH_PASSWORD }}
+        shell: bash
+        run: |
+          mkdir -p build/community-refresh
+          PREPARED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          BASE_COMMIT="$(git rev-parse HEAD)"
+          python -m compatforge_pipeline.community_refresh prepare \
+            --repository-root . \
+            --base-commit "$BASE_COMMIT" \
+            --prepared-at "$PREPARED_AT" \
+            --result build/community-refresh/result.json
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          result = json.loads(Path("build/community-refresh/result.json").read_text())
+          print(f"added={result['added']}")
+          print(f"already_present={result['already_present']}")
+          print(f"batch_id={result['batch_id'] or ''}")
+          print(f"manifest_path={result['manifest_path'] or ''}")
+          PY
+
+      - name: Report no-op refresh
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added == '0'
+        run: |
+          echo "No new accepted candidate files require a refresh PR." >> "$GITHUB_STEP_SUMMARY"
+          echo "Already present and awaiting publication receipt: ${{ steps.prepare.outputs.already_present }}" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify exact candidate bytes and contracts
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        run: |
+          python -m compatforge_pipeline.community_refresh verify \
+            --repository-root . \
+            --manifest "${{ steps.prepare.outputs.manifest_path }}"
+          python -m compatforge_pipeline.validate data/evidence/observations
+
+      - name: Render pull request body
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        run: |
+          python -m compatforge_pipeline.community_refresh pr-body \
+            --manifest "${{ steps.prepare.outputs.manifest_path }}" \
+            --output build/community-refresh/pr-body.md
+
+      - name: Commit and push bot-owned refresh branch
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+          BATCH_ID: ${{ steps.prepare.outputs.batch_id }}
+        shell: bash
+        run: |
+          git config user.name "compatforge-refresh[bot]"
+          git config user.email "compatforge-refresh[bot]@users.noreply.github.com"
+          git checkout -B automation/community-refresh
+          git add data/evidence/observations data/evidence/community-refresh
+          git commit -m "Refresh accepted community evidence ${BATCH_ID:0:12}"
+          gh auth setup-git
+          git push --force origin HEAD:refs/heads/automation/community-refresh
+
+      - name: Create or update review pull request
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          existing_pr="$(
+            gh pr list \
+              --head automation/community-refresh \
+              --base main \
+              --state open \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr" \
+              --title "Refresh accepted community evidence" \
+              --body-file build/community-refresh/pr-body.md
+          else
+            gh pr create \
+              --base main \
+              --head automation/community-refresh \
+              --title "Refresh accepted community evidence" \
+              --body-file build/community-refresh/pr-body.md
+          fi
+          echo "Prepared a review PR only; no Supabase publication receipt was recorded." \
+            >> "$GITHUB_STEP_SUMMARY"
