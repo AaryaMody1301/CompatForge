@@ -8,7 +8,7 @@ from pathlib import Path
 
 FULL_SHA = re.compile(r"^[0-9a-fA-F]{40}$")
 MAJOR_TAG = re.compile(r"^v[1-9][0-9]*$")
-USES_LINE = re.compile(r"^\s*uses:\s*([^\s#]+)", re.MULTILINE)
+USES_LINE = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:\s*$", re.MULTILINE)
 PULL_REQUEST_TARGET = re.compile(r"^\s*pull_request_target\s*:", re.MULTILINE)
 DANGEROUS_PIPE = re.compile(
