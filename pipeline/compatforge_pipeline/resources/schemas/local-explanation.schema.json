@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://compatforge.dev/schemas/local-explanation.schema.json",
+  "title": "CompatForge local compatibility explanation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_type",
+    "schema_version",
+    "generated_from_diagnostic",
+    "target_device_id",
+    "status",
+    "snapshot",
+    "driver_context",
+    "results",
+    "limitations"
+  ],
+  "properties": {
+    "record_type": {"const": "local_compatibility_explanation"},
+    "schema_version": {"const": "1.0.0"},
+    "generated_from_diagnostic": {"type": "string", "format": "date-time"},
+    "target_device_id": {
+      "type": "string",
+      "pattern": "^usb:[0-9A-F]{4}:[0-9A-F]{4}$"
+    },
+    "status": {
+      "enum": ["resolved", "target_absent", "target_collection_unavailable"]
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format_version",
+        "sha256",
+        "observation_count",
+        "support_statement_count"
+      ],
+      "properties": {
+        "format_version": {"const": "1.0.0"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "observation_count": {"type": "integer", "minimum": 0},
+        "support_statement_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "driver_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "drivers"],
+      "properties": {
+        "status": {
+          "enum": ["collected", "partial", "unavailable", "not_observed"]
+        },
+        "drivers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "provider": {"type": "string", "minLength": 1},
+              "version": {"type": "string", "minLength": 1}
+            }
+          }
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "connection_path",
+          "claim_state",
+          "specificity",
+          "is_relaxed",
+          "observation_ids",
+          "conditions",
+          "support",
+          "evidence_sources"
+        ],
+        "properties": {
+          "connection_path": {
+            "enum": ["direct_port", "usb_hub", "unspecified"]
+          },
+          "claim_state": {
+            "enum": ["works", "works_with_conditions", "fails", "conflicting", "unknown"]
+          },
+          "specificity": {
+            "enum": ["exact", "host_relaxed", "os_version_relaxed", "none"]
+          },
+          "is_relaxed": {"type": "boolean"},
+          "observation_ids": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "conditions": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "support": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "statement_ids", "conditions"],
+            "properties": {
+              "state": {
+                "enum": [
+                  "supported",
+                  "supported_with_conditions",
+                  "unsupported",
+                  "conflicting",
+                  "unknown"
+                ]
+              },
+              "statement_ids": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              },
+              "conditions": {
+                "type": "array",
+                "items": {"type": "string", "minLength": 1},
+                "uniqueItems": true
+              }
+            }
+          },
+          "evidence_sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "record_id",
+                "record_kind",
+                "source_type",
+                "source_url",
+                "source_title",
+                "limitations"
+              ],
+              "properties": {
+                "record_id": {"type": "string", "minLength": 1},
+                "record_kind": {"enum": ["observation", "support_statement"]},
+                "source_type": {
+                  "enum": [
+                    "vendor_documentation",
+                    "independent_reproduction",
+                    "diagnostic_report",
+                    "issue_report",
+                    "community_report"
+                  ]
+                },
+                "source_url": {"type": "string", "format": "uri"},
+                "source_title": {"type": "string", "minLength": 1},
+                "limitations": {
+                  "type": "array",
+                  "items": {"type": "string", "minLength": 1},
+                  "uniqueItems": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    }
+  }
+}

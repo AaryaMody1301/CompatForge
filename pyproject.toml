@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compatforge-hw-pipeline"
-version = "0.3.0b2"
+version = "0.3.0rc1"
 description = "Evidence and identity contract tooling for CompatForge hardware compatibility data"
 requires-python = ">=3.13"
 license = {text = "MIT"}
@@ -23,8 +23,12 @@ data = [
   "dbt-core==1.12.3",
   "dbt-duckdb==1.11.0",
 ]
+release = [
+  "pyinstaller==6.22.2",
+]
 
 [project.scripts]
+compatforge-hw = "compatforge_pipeline.cli:main"
 compatforge-validate = "compatforge_pipeline.validate:main"
 compatforge-identity = "compatforge_pipeline.identity_pipeline:main"
 compatforge-resolve = "compatforge_pipeline.resolver:main"
@@ -37,7 +41,10 @@ compatforge-explain = "compatforge_pipeline.local_explain:main"
 where = ["pipeline"]
 
 [tool.setuptools.package-data]
-compatforge_pipeline = ["resources/*.json"]
+compatforge_pipeline = [
+  "resources/*.json",
+  "resources/schemas/*.json",
+]
 
 [tool.pytest.ini_options]
 addopts = "-ra"

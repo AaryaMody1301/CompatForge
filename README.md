@@ -18,7 +18,7 @@ The project treats compatibility as a configuration-level evidence problem rathe
 
 **Phase 4 - public web MVP:** complete and deployed on Vercel.
 
-**Phase 5 - local diagnostic agent:** active. Phase 5A established privacy-first cross-platform collection. Phase 5B adds target-scoped driver context, a deterministic packaged compatibility snapshot, and offline resolver explanations.
+**Phase 5 - local diagnostic agent:** active. Phase 5A established privacy-first cross-platform collection. Phase 5B completed target-scoped driver context, a deterministic packaged compatibility snapshot, and offline resolver explanations. Phase 5C is building an attestable cross-platform standalone CLI and an explicit local-only contribution handoff.
 
 ## Initial scope
 
@@ -36,8 +36,9 @@ data/fixtures/                 public synthetic contract fixtures
 tests/fixtures/evidence/       synthetic evidence pipeline fixtures
 schemas/                       public JSON Schema contracts
 tests/                         contract, resolver, diagnostic, and pipeline tests
+tools/                         release packaging helpers and frozen entry point
 docs/                          architecture, evidence, web, privacy, roadmap
-.github/workflows/             CI and reviewed refresh workflows
+.github/workflows/             CI, refresh, and CLI release workflows
 ```
 
 ## Validate contracts
@@ -50,6 +51,36 @@ python -m compatforge_pipeline.validate data/fixtures data/evidence/vendor data/
 pytest -q
 ruff check pipeline tests
 ```
+
+## Run the local diagnostic workflow
+
+The Phase 5C end-user surface is one command:
+
+```bash
+compatforge-hw diagnose \
+  --device usb:0403:6001 \
+  --output compatforge-diagnostic.json
+
+compatforge-hw explain \
+  --diagnostic compatforge-diagnostic.json \
+  --output compatforge-explanation.json
+
+compatforge-hw snapshot-info
+```
+
+The diagnostic manifest contains allowlisted machine facts; the explanation is a separate derived record backed by the packaged reviewed snapshot. These commands run locally and do not upload data.
+
+An optional future-contribution handoff requires explicit export approval and still writes only a local JSON file:
+
+```bash
+compatforge-hw prepare-contribution \
+  --diagnostic compatforge-diagnostic.json \
+  --explanation compatforge-explanation.json \
+  --approve-export \
+  --output contribution-handoff.json
+```
+
+The handoff is marked `evidence_ready: false`; it is not a compatibility observation. See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md), [`docs/PRIVACY.md`](docs/PRIVACY.md), and [`docs/CLI_RELEASE.md`](docs/CLI_RELEASE.md).
 
 ## Build the identity + evidence platform locally
 
@@ -87,22 +118,6 @@ python -m compatforge_pipeline.resolver \
 
 The resolver returns two separate answers: an observed claim and a vendor/support state.
 
-## Run the local diagnostic workflow
-
-```bash
-compatforge-diagnose \
-  --device usb:0403:6001 \
-  --output compatforge-diagnostic.json
-
-compatforge-explain \
-  --diagnostic compatforge-diagnostic.json \
-  --output compatforge-explanation.json
-
-compatforge-snapshot info
-```
-
-Both commands run locally. The diagnostic manifest contains allowlisted machine facts; the explanation is a separate derived record backed by the packaged reviewed snapshot. Neither command uploads data. See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md).
-
 ## Run the public web MVP
 
 From `apps/web`:
@@ -112,7 +127,7 @@ npm ci
 npm run dev
 ```
 
-The web app imports the reviewed JSON evidence directly from `data/evidence/`; it does not require a live database or paid API. See [`docs/WEB_MVP.md`](docs/WEB_MVP.md).
+The web app imports reviewed JSON evidence directly from `data/evidence/`; it does not require a live database or paid API. See [`docs/WEB_MVP.md`](docs/WEB_MVP.md).
 
 ## Project principles
 
@@ -125,6 +140,7 @@ The web app imports the reviewed JSON evidence directly from `data/evidence/`; i
 7. Conflicting evidence is preserved, not averaged away.
 8. Raw source provenance and licensing are release requirements.
 9. Diagnostic collection must be inspectable and privacy-minimized.
+10. Preparing a contribution and publishing evidence are separate, explicit actions.
 
 ## License
 

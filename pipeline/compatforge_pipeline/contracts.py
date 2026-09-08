@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +11,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_DIR = REPO_ROOT / "schemas"
+_RESOURCE_SCHEMA_DIR = ("resources", "schemas")
 
 _SCHEMA_BY_RECORD_TYPE = {
     "device": "device.schema.json",
@@ -17,6 +19,7 @@ _SCHEMA_BY_RECORD_TYPE = {
     "compatibility_support_statement": "support-statement.schema.json",
     "diagnostic_manifest": "diagnostic-manifest.schema.json",
     "local_compatibility_explanation": "local-explanation.schema.json",
+    "contribution_handoff": "contribution-handoff.schema.json",
 }
 
 
@@ -24,16 +27,34 @@ class ContractValidationError(ValueError):
     """Raised when a document violates a CompatForge public contract."""
 
 
+def _load_packaged_schema(schema_name: str) -> dict[str, Any]:
+    resource = files("compatforge_pipeline")
+    for part in _RESOURCE_SCHEMA_DIR:
+        resource = resource.joinpath(part)
+    resource = resource.joinpath(schema_name)
+    try:
+        return json.loads(resource.read_text(encoding="utf-8"))
+    except (FileNotFoundError, OSError, json.JSONDecodeError) as exc:
+        raise ContractValidationError(
+            f"Packaged schema is unavailable or invalid: {schema_name}"
+        ) from exc
+
+
 def load_schema(record_type: str) -> dict[str, Any]:
-    """Load a schema by its public record type."""
+    """Load a schema by its public record type from source or packaged resources."""
 
     try:
         schema_name = _SCHEMA_BY_RECORD_TYPE[record_type]
     except KeyError as exc:
         raise ContractValidationError(f"Unsupported record_type: {record_type!r}") from exc
 
-    with (SCHEMA_DIR / schema_name).open(encoding="utf-8") as handle:
-        return json.load(handle)
+    source_schema = SCHEMA_DIR / schema_name
+    if source_schema.is_file():
+        try:
+            return json.loads(source_schema.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ContractValidationError(f"Invalid source schema: {schema_name}") from exc
+    return _load_packaged_schema(schema_name)
 
 
 def validate_document(document: dict[str, Any], *, source: str = "<memory>") -> None:

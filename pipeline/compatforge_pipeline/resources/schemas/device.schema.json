@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://compatforge.dev/schemas/device.schema.json",
+  "title": "CompatForge Device",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "device_id",
+    "manufacturer",
+    "product_name",
+    "category",
+    "interface",
+    "identifiers"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "record_type": {"const": "device"},
+    "device_id": {"type": "string", "pattern": "^usb:[0-9A-F]{4}:[0-9A-F]{4}$"},
+    "manufacturer": {"type": "string", "minLength": 1, "maxLength": 120},
+    "product_name": {"type": "string", "minLength": 1, "maxLength": 160},
+    "category": {"enum": ["usb_serial_adapter", "development_board", "debugger_programmer", "logic_analyzer", "other"]},
+    "interface": {"const": "usb"},
+    "identifiers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scheme", "vendor_id", "product_id"],
+        "properties": {
+          "scheme": {"const": "usb_vid_pid"},
+          "vendor_id": {"type": "string", "pattern": "^[0-9A-F]{4}$"},
+          "product_id": {"type": "string", "pattern": "^[0-9A-F]{4}$"}
+        }
+      }
+    },
+    "notes": {"type": "string", "maxLength": 2000}
+  }
+}
