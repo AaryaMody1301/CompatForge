@@ -1,0 +1,36 @@
+name: Community database
+
+on:
+  push:
+    branches:
+      - main
+      - "phase-6*"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  database-contracts:
+    name: Supabase migrations and RLS
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2.1.1
+        with:
+          version: 2.117.0
+
+      - name: Start local Postgres
+        run: supabase db start
+
+      - name: Lint database
+        run: supabase db lint --local --level error
+
+      - name: Test migrations and RLS
+        run: supabase test db
