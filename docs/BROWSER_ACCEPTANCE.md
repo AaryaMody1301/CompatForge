@@ -1,6 +1,6 @@
 # Browser acceptance
 
-Phase 8A adds a real-browser release gate for the public CompatForge surface without introducing a new JavaScript testing dependency.
+Phase 8A adds a real-browser release gate for the public CompatForge surface without introducing a new JavaScript testing dependency. Phase 8B extends the same contract with deployed security-header assertions.
 
 ## Why Chrome CLI
 
@@ -22,6 +22,8 @@ The gate therefore tests the production Next.js build in a browser while leaving
 
 For every case the runner verifies the expected HTTP status, renders the page in headless Chrome, requires an application `<main>`, checks reviewed content markers, and rejects generic application/runtime error markers.
 
+Phase 8B additionally requires every case to return the configured CSP, Permissions Policy, Referrer Policy, HSTS, `X-Content-Type-Options`, and `X-Frame-Options` headers. It also fails if `X-Powered-By` is exposed. The exact policy is documented in `docs/SECURITY_HARDENING.md`.
+
 The community-submission case accepts either safe unauthenticated state: hosted authentication configured but no signed-in user, or authentication intentionally unconfigured. It does not attempt OAuth in CI.
 
 ## Visual artifacts
@@ -32,7 +34,7 @@ Each run also captures:
 - narrow/mobile-sized home page;
 - desktop compatibility-checker result.
 
-The JSON report, Markdown summary, screenshots, and local server log are uploaded as GitHub Actions artifacts for 14 days.
+The JSON report, Markdown summary, screenshots, and local server log are uploaded as GitHub Actions artifacts for 14 days. The JSON report includes the observed security-header values for every reviewed route.
 
 ## Pull-request gate
 
@@ -43,14 +45,15 @@ The existing `Next.js web` CI job now:
 3. builds the production Next.js application;
 4. starts `next start` on loopback only;
 5. runs the browser acceptance suite against that exact build;
-6. uploads the browser artifacts even when an assertion fails;
-7. terminates the local production server.
+6. verifies the response-security contract on every reviewed route;
+7. uploads the browser artifacts even when an assertion fails;
+8. terminates the local production server.
 
 The job keeps repository permissions at `contents: read`.
 
 ## Production smoke
 
-`.github/workflows/browser-smoke.yml` runs the same browser contract every Tuesday against `https://compat-forge.vercel.app` and supports a manual `base_url` override for testing another public deployment URL.
+`.github/workflows/browser-smoke.yml` runs the same browser and security-header contract every Tuesday against `https://compat-forge.vercel.app` and supports a manual `base_url` override for testing another public deployment URL.
 
 The production workflow is read-only. It does not deploy, mutate evidence, authenticate users, or write to Supabase.
 
@@ -75,4 +78,4 @@ Set `CHROME_BIN` if Chrome or Chromium is not available under one of the default
 
 ## Boundary
 
-Phase 8A is a public, unauthenticated browser gate. Hosted GitHub OAuth/Supabase moderation acceptance remains a separate configured-environment test. Supply-chain policy, dependency-review enforcement, immutable data release manifests, and broader release attestations belong to later Phase 8 slices.
+The browser gate is public and unauthenticated. Hosted GitHub OAuth/Supabase moderation acceptance remains a separate configured-environment test. Phase 8B adds supply-chain and response-security enforcement; immutable data release manifests and broader release attestations belong to Phase 8C, while repository-setting/release immutability acceptance belongs to Phase 8D.
