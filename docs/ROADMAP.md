@@ -169,7 +169,7 @@ Status: **complete**.
 
 ### Phase 7B - permitted vendor adapters and semantic change reports
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - exact-host HTTPS allowlisting for source-specific vendor adapters;
 - bounded FTDI VCP semantic extraction;
@@ -182,9 +182,19 @@ Status: **implementation complete; merge pending**.
 
 ### Phase 7C - accepted-community refresh preparation
 
-- automated accepted-community-candidate refresh PR preparation while preserving candidate SHA-256, review, CI, merge and publication-receipt gates;
-- deterministic publication batches and repository provenance;
-- no database-to-main direct write path.
+Status: **implementation complete; merge pending**.
+
+- dedicated least-privilege refresh identities separate from reviewer/admin membership;
+- bounded accepted/unpublished refresh RPC returning both candidate JSON and its exact hashed PostgreSQL text;
+- byte-for-byte candidate materialization so repository file SHA-256 equals the immutable accepted candidate SHA-256;
+- collision refusal instead of overwriting existing canonical evidence;
+- deterministic refresh manifests with candidate and source-payload provenance;
+- CI verification of refresh manifests and exact candidate bytes;
+- scheduled/manual bot-owned refresh branch and pull-request preparation;
+- separate GitHub App/fine-grained token path so automation-created PRs can trigger normal CI;
+- no database-to-main direct write, automatic merge, or automatic publication receipt.
+
+Hosted acceptance requires the Phase 7C Supabase automation identity and GitHub refresh token described in `docs/COMMUNITY_REFRESH_AUTOMATION.md`.
 
 ### Phase 7D - coverage and stale-evidence operations
 
