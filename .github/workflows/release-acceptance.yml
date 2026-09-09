@@ -1,0 +1,90 @@
+name: CompatForge Release Acceptance
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "apps/web/next.config.ts"
+      - "pipeline/compatforge_pipeline/release_acceptance.py"
+      - "tests/test_release_acceptance.py"
+      - "docs/RELEASE_ACCEPTANCE.md"
+      - ".github/workflows/release-acceptance.yml"
+      - ".github/workflows/release-provenance.yml"
+      - ".github/workflows/release-cli.yml"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to preflight (v1.0.0-rc.N or v1.0.0)"
+        required: true
+        default: "v1.0.0-rc.1"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    name: Release acceptance contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: python -m pip install -e ".[dev]"
+
+      - name: Lint release acceptance
+        run: ruff check pipeline/compatforge_pipeline/release_acceptance.py tests/test_release_acceptance.py
+
+      - name: Test release acceptance
+        run: pytest -q tests/test_release_acceptance.py
+
+  live-preflight:
+    name: Live release preflight
+    if: github.event_name == 'workflow_dispatch'
+    needs: contracts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require main branch dispatch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release preflight must be dispatched from main." >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Install project
+        run: python -m pip install -e "."
+
+      - name: Verify repository, immutability, and deployed commit
+        env:
+          COMPATFORGE_RELEASE_ADMIN_TOKEN: ${{ secrets.COMPATFORGE_RELEASE_ADMIN_TOKEN }}
+        run: >-
+          python -m compatforge_pipeline.release_acceptance
+          --commit "$GITHUB_SHA"
+          --tag "${{ inputs.release_tag }}"
+          --output build/release-acceptance/report.json
+
+      - name: Upload acceptance report
+        uses: actions/upload-artifact@v7
+        with:
+          name: compatforge-release-acceptance
+          path: build/release-acceptance/
+          if-no-files-found: error
+          retention-days: 30
