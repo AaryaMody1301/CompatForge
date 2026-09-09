@@ -80,14 +80,14 @@
     "identity_source": "https://usb-ids.gowdy.us/read/UD/1a86/7523"
   },
   {
-    "id": "usb:1A86:55D4",
-    "slug": "qinheng-ch9102",
+    "id": "usb:1A86:5523",
+    "slug": "qinheng-ch341-serial",
     "manufacturer": "QinHeng Electronics",
-    "name": "CH9102 Serial Converter",
-    "aliases": ["CH9102", "WCH CH9102"],
+    "name": "CH341 Serial Converter",
+    "aliases": ["CH341", "WCH CH341"],
     "category": "USB serial",
-    "summary": "WCH/QinHeng CH9102 USB-to-serial converter identity. Compatibility remains unknown until reviewed evidence is added.",
-    "identity_source": "https://usb-ids.gowdy.us/read/UD/1a86/55d4"
+    "summary": "WCH/QinHeng CH341 USB-to-serial converter identity. Compatibility remains unknown until reviewed evidence is added.",
+    "identity_source": "https://usb-ids.gowdy.us/read/UD/1a86"
   },
   {
     "id": "usb:21A9:1005",
