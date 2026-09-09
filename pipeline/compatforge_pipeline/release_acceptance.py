@@ -9,6 +9,7 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ _API_VERSION = "2026-03-10"
 _DEFAULT_REPOSITORY = "AaryaMody1301/CompatForge"
 _DEFAULT_BRANCH = "main"
 _DEFAULT_PRODUCTION_URL = "https://compat-forge.vercel.app"
+_ACTIVE_ENFORCEMENT = frozenset({"active", "enabled", "always"})
 
 
 class ReleaseAcceptanceError(ValueError):
@@ -58,6 +60,21 @@ def _fetch_json(url: str, *, token: str | None = None) -> Any:
         raise ReleaseAcceptanceError(f"could not read required API state from {url}") from exc
 
 
+def _fetch_immutable_state(url: str, *, token: str) -> dict[str, Any]:
+    try:
+        with urllib.request.urlopen(_request(url, token=token), timeout=15) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return {"enabled": False, "enforced_by_owner": False}
+        raise ReleaseAcceptanceError("could not read immutable release state") from exc
+    except (urllib.error.URLError, json.JSONDecodeError) as exc:
+        raise ReleaseAcceptanceError("could not read immutable release state") from exc
+    if not isinstance(payload, dict):
+        raise ReleaseAcceptanceError("immutable release state was not a JSON object")
+    return payload
+
+
 def _fetch_headers(url: str) -> dict[str, str]:
     try:
         with urllib.request.urlopen(_request(url, method="HEAD"), timeout=15) as response:
@@ -73,8 +90,56 @@ def _active_rulesets(rulesets: Any) -> list[dict[str, Any]]:
     return [
         item
         for item in rulesets
-        if isinstance(item, dict) and item.get("enforcement") in {"active", "always"}
+        if isinstance(item, dict) and item.get("enforcement") in _ACTIVE_ENFORCEMENT
     ]
+
+
+def _ref_matches(pattern: str, ref: str, *, default_branch: bool) -> bool:
+    if pattern == "~ALL":
+        return True
+    if pattern == "~DEFAULT_BRANCH":
+        return default_branch
+    return fnmatchcase(ref, pattern)
+
+
+def _ruleset_applies(
+    ruleset: dict[str, Any],
+    *,
+    target: str,
+    ref: str,
+    default_branch: bool = False,
+) -> bool:
+    if ruleset.get("enforcement") not in _ACTIVE_ENFORCEMENT:
+        return False
+    if ruleset.get("target") != target:
+        return False
+    conditions = ruleset.get("conditions")
+    if not isinstance(conditions, dict):
+        return False
+    ref_name = conditions.get("ref_name")
+    if not isinstance(ref_name, dict):
+        return False
+    includes = ref_name.get("include")
+    excludes = ref_name.get("exclude", [])
+    if not isinstance(includes, list) or not includes:
+        return False
+    if not isinstance(excludes, list):
+        return False
+    included = any(
+        isinstance(pattern, str)
+        and _ref_matches(pattern, ref, default_branch=default_branch)
+        for pattern in includes
+    )
+    excluded = any(
+        isinstance(pattern, str)
+        and _ref_matches(pattern, ref, default_branch=default_branch)
+        for pattern in excludes
+    )
+    return included and not excluded
+
+
+def _ruleset_names(rulesets: list[dict[str, Any]]) -> list[str]:
+    return sorted(str(item.get("name", "")) for item in rulesets)
 
 
 def evaluate_acceptance(
@@ -110,11 +175,31 @@ def evaluate_acceptance(
     )
 
     active_rulesets = _active_rulesets(rulesets)
+    main_ref = f"refs/heads/{_DEFAULT_BRANCH}"
+    main_rulesets = [
+        item
+        for item in active_rulesets
+        if _ruleset_applies(item, target="branch", ref=main_ref, default_branch=True)
+    ]
     checks.append(
         {
-            "name": "active_repository_ruleset",
-            "passed": bool(active_rulesets),
-            "observed": sorted(str(item.get("name", "")) for item in active_rulesets),
+            "name": "main_ruleset",
+            "passed": bool(main_rulesets),
+            "observed": _ruleset_names(main_rulesets),
+        }
+    )
+
+    tag_ref = f"refs/tags/{release_tag}"
+    tag_rulesets = [
+        item
+        for item in active_rulesets
+        if _ruleset_applies(item, target="tag", ref=tag_ref)
+    ]
+    checks.append(
+        {
+            "name": "release_tag_ruleset",
+            "passed": bool(tag_rulesets),
+            "observed": _ruleset_names(tag_rulesets),
         }
     )
 
@@ -159,6 +244,26 @@ def evaluate_acceptance(
     }
 
 
+def _fetch_ruleset_details(
+    *,
+    base_url: str,
+    summaries: Any,
+    token: str,
+) -> list[dict[str, Any]]:
+    details: list[dict[str, Any]] = []
+    for summary in _active_rulesets(summaries):
+        ruleset_id = summary.get("id")
+        if not isinstance(ruleset_id, int):
+            continue
+        payload = _fetch_json(
+            f"{base_url}/rulesets/{ruleset_id}?includes_parents=true",
+            token=token,
+        )
+        if isinstance(payload, dict):
+            details.append(payload)
+    return details
+
+
 def inspect_live_state(
     *,
     repository: str,
@@ -174,9 +279,13 @@ def inspect_live_state(
     _validate_tag(release_tag)
     base = f"https://api.github.com/repos/{repository}"
     branch = _fetch_json(f"{base}/branches/{branch_name}", token=github_token)
-    rulesets = _fetch_json(f"{base}/rulesets?includes_parents=true", token=github_token)
+    summaries = _fetch_json(f"{base}/rulesets?includes_parents=true", token=github_token)
+    rulesets = _fetch_ruleset_details(base_url=base, summaries=summaries, token=github_token)
     releases = _fetch_json(f"{base}/releases?per_page=100", token=github_token)
-    immutable_releases = _fetch_json(f"{base}/immutable-releases", token=github_token)
+    immutable_releases = _fetch_immutable_state(
+        f"{base}/immutable-releases",
+        token=github_token,
+    )
     production_headers = _fetch_headers(production_url.rstrip("/") + "/")
     return evaluate_acceptance(
         expected_commit=expected_commit,
