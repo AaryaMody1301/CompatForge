@@ -40,7 +40,7 @@ jobs:
         env:
           COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/live/compatforge.duckdb
         run: >-
-          dbt build
+          dbt run
           --project-dir dbt/compatforge
           --profiles-dir dbt/compatforge
           --select +device_catalog
