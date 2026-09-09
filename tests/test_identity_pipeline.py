@@ -24,6 +24,22 @@ def test_bronze_build_is_provenance_complete(tmp_path: Path) -> None:
     assert (tmp_path / manifest["artifacts"]["devices_parquet"]).exists()
 
 
+def test_bronze_build_accepts_legacy_latin1_usb_ids(tmp_path: Path) -> None:
+    source = tmp_path / "legacy.usb.ids"
+    source.write_bytes("1234  Caf\u00e9 Devices\n\t0001  Serial Adapter\n".encode("iso-8859-1"))
+    workspace = tmp_path / "workspace"
+
+    manifest = build_bronze(
+        workspace=workspace,
+        input_path=source,
+        retrieved_at=FIXED_RETRIEVED_AT,
+        source_url="synthetic://legacy-usb.ids",
+    )
+
+    assert manifest["counts"] == {"vendors": 1, "devices": 1}
+    assert manifest["source"]["parser_version"] == "2"
+
+
 def test_public_snapshot_contains_identity_only(tmp_path: Path) -> None:
     import duckdb
 
