@@ -1,6 +1,15 @@
 name: Refresh USB identity snapshot
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "data/catalog/**"
+      - "pipeline/compatforge_pipeline/usb_ids.py"
+      - "pipeline/compatforge_pipeline/identity_pipeline.py"
+      - "dbt/compatforge/**"
+      - ".github/workflows/refresh-identities.yml"
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -14,7 +23,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -30,10 +39,32 @@ jobs:
       - name: Build analytical identity models
         env:
           COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/live/compatforge.duckdb
-        run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+        run: >-
+          dbt run
+          --project-dir dbt/compatforge
+          --profiles-dir dbt/compatforge
+          --select +device_catalog
 
       - name: Export public identity snapshot
         run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/live
+
+      - name: Verify release catalog identities remain upstream
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          catalog = json.loads(Path("data/catalog/release-preview-devices.json").read_text())
+          snapshot = Path("build/live/public/device_catalog.jsonl")
+          upstream_ids = {
+              json.loads(line)["device_id"]
+              for line in snapshot.read_text(encoding="utf-8").splitlines()
+              if line
+          }
+          missing = sorted(item["id"] for item in catalog if item["id"] not in upstream_ids)
+          if missing:
+              raise SystemExit(f"release catalog identities missing upstream: {missing}")
+          PY
 
       - name: Upload refresh candidate
         uses: actions/upload-artifact@v7

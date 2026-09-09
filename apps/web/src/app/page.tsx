@@ -2,6 +2,11 @@ import Link from "next/link";
 import { devices } from "@/lib/catalog";
 import { getDeviceEvidence, observations, supportStatements } from "@/lib/evidence";
 
+const evidenceBackedDevices = devices.filter((device) => {
+  const evidence = getDeviceEvidence(device.id);
+  return evidence.supportStatements.length > 0 || evidence.observations.length > 0;
+});
+
 export default function Home() {
   return (
     <main className="shell page-stack">
@@ -9,8 +14,8 @@ export default function Home() {
         <p className="eyebrow">Evidence-first compatibility</p>
         <h1>Will this hardware actually work?</h1>
         <p className="lede">
-          CompatForge separates vendor support from observed compatibility, preserves conflicts, and
-          returns unknown when the evidence does not justify a stronger answer.
+          CompatForge separates known hardware identity, vendor support, and observed compatibility.
+          Missing evidence stays unknown instead of becoming an invented recommendation.
         </p>
         <div className="actions">
           <Link className="button button-primary" href="/check">
@@ -23,7 +28,7 @@ export default function Home() {
         <div className="metrics" aria-label="Current evidence corpus">
           <div>
             <strong>{devices.length}</strong>
-            <span>devices</span>
+            <span>known identities</span>
           </div>
           <div>
             <strong>{supportStatements.length}</strong>
@@ -39,13 +44,13 @@ export default function Home() {
       <section>
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Current catalog</p>
-            <h2>Small corpus, explicit evidence.</h2>
+            <p className="eyebrow">Reviewed evidence</p>
+            <h2>Evidence-backed devices stay distinct from identity-only entries.</h2>
           </div>
           <Link href="/coverage">View coverage</Link>
         </div>
         <div className="grid grid-two">
-          {devices.map((device) => {
+          {evidenceBackedDevices.map((device) => {
             const evidence = getDeviceEvidence(device.id);
             return (
               <article className="card device-card" key={device.id}>
@@ -60,6 +65,9 @@ export default function Home() {
             );
           })}
         </div>
+        <p className="meta">
+          The full catalog includes identity-only devices whose compatibility remains unknown.
+        </p>
       </section>
 
       <section>

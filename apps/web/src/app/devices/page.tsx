@@ -13,7 +13,7 @@ export default async function DevicesPage({ searchParams }: Props) {
   const normalized = query.toLocaleLowerCase("en");
   const results = normalized
     ? devices.filter((device) =>
-        [device.name, device.manufacturer, device.category, device.id]
+        [device.name, device.manufacturer, device.category, device.id, ...device.aliases]
           .join(" ")
           .toLocaleLowerCase("en")
           .includes(normalized),
@@ -24,12 +24,20 @@ export default async function DevicesPage({ searchParams }: Props) {
     <main className="shell page-stack">
       <section className="compact-hero">
         <p className="eyebrow">Device catalog</p>
-        <h1>Browse reviewed hardware.</h1>
-        <p>Search the current evidence-backed catalog by product, vendor, category, or USB ID.</p>
+        <h1>Browse known hardware identities.</h1>
+        <p>
+          Identity coverage is broader than compatibility evidence. Devices without reviewed support
+          or observations remain explicitly unknown.
+        </p>
         <form className="search-form" action="/devices" method="get">
           <label htmlFor="device-search">Search devices</label>
           <div className="search-row">
-            <input id="device-search" name="q" defaultValue={query} placeholder="FT232R, Saleae, usb:0403:6001…" />
+            <input
+              id="device-search"
+              name="q"
+              defaultValue={query}
+              placeholder="FT232R, CP210x, CH340, Saleae, usb:0403:6001…"
+            />
             <button type="submit">Search</button>
           </div>
         </form>
@@ -40,6 +48,8 @@ export default async function DevicesPage({ searchParams }: Props) {
         <div className="grid grid-two">
           {results.map((device) => {
             const evidence = getDeviceEvidence(device.id);
+            const hasEvidence =
+              evidence.supportStatements.length > 0 || evidence.observations.length > 0;
             return (
               <article className="card device-card" key={device.id}>
                 <p className="kicker">{device.category}</p>
@@ -47,10 +57,14 @@ export default async function DevicesPage({ searchParams }: Props) {
                 <code>{device.id}</code>
                 <p>{device.summary}</p>
                 <p className="meta">
-                  {evidence.supportStatements.length} support · {evidence.observations.length} observed
+                  {hasEvidence
+                    ? `${evidence.supportStatements.length} support · ${evidence.observations.length} observed`
+                    : "Identity known · compatibility evidence unknown"}
                 </p>
                 <div className="card-actions">
-                  <Link href={`/devices/${device.slug}`}>Evidence</Link>
+                  <Link href={`/devices/${device.slug}`}>
+                    {hasEvidence ? "Review evidence" : "Identity details"}
+                  </Link>
                   <Link href={`/check?device=${encodeURIComponent(device.id)}`}>Check configuration</Link>
                 </div>
               </article>
@@ -59,8 +73,8 @@ export default async function DevicesPage({ searchParams }: Props) {
         </div>
         {results.length === 0 ? (
           <div className="empty-state">
-            <h2>No reviewed device matches that search.</h2>
-            <p>The catalog is intentionally narrow while evidence quality is being established.</p>
+            <h2>No catalog identity matches that search.</h2>
+            <p>Try a product name, vendor, alias, or canonical USB VID/PID.</p>
           </div>
         ) : null}
       </section>
