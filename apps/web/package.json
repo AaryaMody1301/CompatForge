@@ -10,7 +10,9 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npm run test:unit && next build",
+    "generate:evidence-index": "node scripts/generate-evidence-index.mjs",
+    "check:evidence-index": "node scripts/generate-evidence-index.mjs --check",
+    "build": "npm run check:evidence-index && npm run test:unit && next build",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

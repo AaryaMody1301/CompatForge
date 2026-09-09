@@ -52,7 +52,7 @@ jobs:
 
       - name: Set up Python
         if: steps.config.outputs.ready == 'true'
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.13"
 
@@ -104,6 +104,19 @@ jobs:
             --manifest "${{ steps.prepare.outputs.manifest_path }}"
           python -m compatforge_pipeline.validate data/evidence/observations
 
+      - name: Set up Node.js
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+
+      - name: Update public web evidence index
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        working-directory: apps/web
+        run: |
+          npm run generate:evidence-index
+          npm run check:evidence-index
+
       - name: Render pull request body
         if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
         run: |
@@ -121,7 +134,10 @@ jobs:
           git config user.name "compatforge-refresh[bot]"
           git config user.email "compatforge-refresh[bot]@users.noreply.github.com"
           git checkout -B automation/community-refresh
-          git add data/evidence/observations data/evidence/community-refresh
+          git add \
+            data/evidence/observations \
+            data/evidence/community-refresh \
+            apps/web/src/lib/evidence.generated.ts
           git commit -m "Refresh accepted community evidence ${BATCH_ID:0:12}"
           gh auth setup-git
           git push --force origin HEAD:refs/heads/automation/community-refresh

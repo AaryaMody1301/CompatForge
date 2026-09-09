@@ -13,7 +13,7 @@ def test_repository_workflows_satisfy_security_policy() -> None:
     assert validate_workflow_directory(Path(".github/workflows")) == {}
 
 
-def test_policy_allows_github_major_tags_and_pinned_third_party(tmp_path: Path) -> None:
+def test_policy_allows_only_pinned_external_actions(tmp_path: Path) -> None:
     path = _write(
         tmp_path,
         """name: ok
@@ -24,8 +24,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: github/codeql-action/analyze@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938
       - uses: vendor/tool@0123456789abcdef0123456789abcdef01234567
 """,
     )
@@ -51,7 +51,7 @@ jobs:
     ]
 
 
-def test_policy_rejects_mutable_third_party_action(tmp_path: Path) -> None:
+def test_policy_rejects_mutable_external_actions(tmp_path: Path) -> None:
     path = _write(
         tmp_path,
         """name: unsafe
@@ -62,14 +62,16 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-python@v7
+      - uses: github/codeql-action/analyze@v4
       - uses: vendor/tool@v2
 """,
     )
-    expected = (
-        "external action must use a full commit SHA, or a major tag for "
-        "GitHub-maintained actions: vendor/tool@v2"
-    )
-    assert validate_workflow(path) == [expected]
+    assert validate_workflow(path) == [
+        "external action must use a full 40-character commit SHA: actions/setup-python@v7",
+        "external action must use a full 40-character commit SHA: github/codeql-action/analyze@v4",
+        "external action must use a full 40-character commit SHA: vendor/tool@v2",
+    ]
 
 
 def test_policy_rejects_network_content_piped_to_shell(tmp_path: Path) -> None:

@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 
 FULL_SHA = re.compile(r"^[0-9a-fA-F]{40}$")
-MAJOR_TAG = re.compile(r"^v[1-9][0-9]*$")
 USES_LINE = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.MULTILINE)
 TOP_LEVEL_PERMISSIONS = re.compile(r"^permissions:\s*$", re.MULTILINE)
 PULL_REQUEST_TARGET = re.compile(r"^\s*pull_request_target\s*:", re.MULTILINE)
@@ -15,7 +14,6 @@ DANGEROUS_PIPE = re.compile(
     r"(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+)?(?:ba|z|fi)?sh\b",
     re.IGNORECASE,
 )
-OFFICIAL_MUTABLE_ACTION_OWNERS = frozenset({"actions", "github"})
 
 
 def _action_error(reference: str) -> str | None:
@@ -24,16 +22,10 @@ def _action_error(reference: str) -> str | None:
     if "@" not in reference:
         return f"external action reference has no version: {reference}"
 
-    action, version = reference.rsplit("@", 1)
-    owner = action.split("/", 1)[0]
+    _, version = reference.rsplit("@", 1)
     if FULL_SHA.fullmatch(version):
         return None
-    if owner in OFFICIAL_MUTABLE_ACTION_OWNERS and MAJOR_TAG.fullmatch(version):
-        return None
-    return (
-        f"external action must use a full commit SHA, or a major tag for GitHub-maintained "
-        f"actions: {reference}"
-    )
+    return f"external action must use a full 40-character commit SHA: {reference}"
 
 
 def validate_workflow(path: Path) -> list[str]:

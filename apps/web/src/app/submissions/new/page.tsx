@@ -22,7 +22,7 @@ const ERRORS: Record<string, string> = {
   field_too_long: "One or more values exceed the community-submission contract limits.",
   invalid_choice: "One of the selected configuration values is unsupported.",
   invalid_device: "Select a device currently reviewed by CompatForge.",
-  invalid_handoff: "Enter the lowercase SHA-256 printed for your approved Phase 5 handoff.",
+  invalid_handoff: "Enter the lowercase SHA-256 printed for your approved contribution handoff.",
   conditions_required: "A conditional result must include at least one condition.",
   limitations_required: "Document at least one limitation of this reproduction.",
   steps_too_short: "Provide at least 20 characters describing how you reproduced the result.",
