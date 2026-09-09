@@ -5,6 +5,9 @@
   "engines": {
     "node": "24.x"
   },
+  "allowScripts": {
+    "unrs-resolver": false
+  },
   "scripts": {
     "dev": "next dev",
     "build": "npm run test:unit && next build",
