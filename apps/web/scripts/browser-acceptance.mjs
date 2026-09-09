@@ -7,6 +7,7 @@ const baseUrl = (process.env.COMPATFORGE_BROWSER_BASE_URL ?? "http://127.0.0.1:3
   /\/$/,
   "",
 );
+const expectedCommit = process.env.COMPATFORGE_EXPECTED_COMMIT?.trim() || null;
 const artifactDir = path.resolve(
   process.cwd(),
   process.env.COMPATFORGE_BROWSER_ARTIFACT_DIR ?? "build/browser-acceptance",
@@ -14,6 +15,8 @@ const artifactDir = path.resolve(
 const browserCandidates = process.env.CHROME_BIN
   ? [process.env.CHROME_BIN]
   : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"];
+const fullCommitPattern = /^[0-9a-f]{40}$/;
+const localTarget = ["localhost", "127.0.0.1"].includes(new URL(baseUrl).hostname);
 const requiredSecurityHeaders = {
   "content-security-policy": ["base-uri 'self'", "frame-ancestors 'none'", "object-src 'none'"],
   "permissions-policy": ["camera=()", "microphone=()", "geolocation=()", "browsing-topics=()"],
@@ -109,6 +112,28 @@ function assertSecurityHeaders(name, response) {
   return observed;
 }
 
+function assertDeploymentCommit(name, response) {
+  const observed = response.headers.get("x-compatforge-commit");
+  if (!observed) {
+    throw new Error(`${name}: response did not include X-CompatForge-Commit`);
+  }
+  if (expectedCommit) {
+    if (!fullCommitPattern.test(expectedCommit)) {
+      throw new Error(`Configured COMPATFORGE_EXPECTED_COMMIT is not a full Git SHA`);
+    }
+    if (observed !== expectedCommit) {
+      throw new Error(
+        `${name}: deployment commit ${JSON.stringify(observed)} did not match ${expectedCommit}`,
+      );
+    }
+    return observed;
+  }
+  if (fullCommitPattern.test(observed) || (localTarget && observed === "local")) {
+    return observed;
+  }
+  throw new Error(`${name}: deployment commit header was not a full Git SHA`);
+}
+
 const cases = [
   {
     name: "home",
@@ -193,6 +218,7 @@ try {
       );
     }
     const securityHeaders = assertSecurityHeaders(testCase.name, response);
+    const deploymentCommit = assertDeploymentCommit(testCase.name, response);
 
     const { html } = dumpDom(url);
     const assertedHtml = html.replaceAll("<!-- -->", "");
@@ -225,6 +251,7 @@ try {
       required_text: testCase.includes,
       alternative_text_groups: testCase.includesAny ?? [],
       security_headers: securityHeaders,
+      deployment_commit: deploymentCommit,
       dom_bytes: Buffer.byteLength(html),
     });
   }
@@ -242,9 +269,10 @@ try {
 }
 
 const report = {
-  report_version: 2,
+  report_version: 3,
   base_url: baseUrl,
   browser: versionProbe.stdout.trim(),
+  expected_commit: expectedCommit,
   required_security_headers: requiredSecurityHeaders,
   passed: failure === null,
   cases: results,
@@ -264,17 +292,18 @@ const summary = [
   `- Result: **${report.passed ? "PASS" : "FAIL"}**`,
   `- Completed cases: **${results.length}/${cases.length}**`,
   `- Required security headers: **${Object.keys(requiredSecurityHeaders).length}**`,
+  `- Expected commit: \`${expectedCommit ?? (localTarget ? "local or full SHA" : "full SHA")}\``,
   "",
-  "| Case | HTTP | Required markers | Alternative groups | Security headers |",
-  "| --- | ---: | ---: | ---: | ---: |",
+  "| Case | HTTP | Required markers | Alternative groups | Security headers | Commit |",
+  "| --- | ---: | ---: | ---: | ---: | --- |",
   ...results.map(
     (item) =>
-      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} | ${Object.keys(item.security_headers).length} |`,
+      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} | ${Object.keys(item.security_headers).length} | \`${item.deployment_commit}\` |`,
   ),
   "",
   failure
     ? `Failure: ${failure}`
-    : "All required routes rendered their reviewed acceptance markers and security headers.",
+    : "All required routes rendered their reviewed acceptance markers, security headers, and deployment commit provenance.",
   "",
 ].join("\n");
 writeFileSync(path.join(artifactDir, "summary.md"), summary, "utf8");

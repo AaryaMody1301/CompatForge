@@ -214,7 +214,7 @@ Phase 7D scoring is review triage only. Detailed semantics and local commands ar
 
 ## Phase 8 - Release hardening
 
-Status: **implementation in progress**.
+Status: **implementation complete; release acceptance pending external configuration**.
 
 ### Phase 8A - browser acceptance
 
@@ -249,7 +249,7 @@ Repeated exact-head runs of `actions/dependency-review-action@v5` returned GitHu
 
 ### Phase 8C - immutable release manifests and attestations
 
-Status: **implementation complete; merge pending**.
+Status: **complete**.
 
 - deterministic top-level release manifest tied to an exact full Git source commit;
 - per-file SHA-256/size provenance for reviewed identity, canonical evidence, vendor semantic baselines, packaged offline evidence, web source/lock inputs and dbt/transformation inputs;
@@ -268,8 +268,20 @@ Tagged releases describe the reviewed repository state at the tag commit and do 
 
 ### Phase 8D - release candidate and v1.0.0 acceptance
 
-- resolve remaining hosted acceptance/configuration gates;
-- verify repository release immutability settings;
-- cut and verify release candidates;
-- document rollback and release acceptance;
-- publish `v1.0.0` only after every required gate is green.
+Status: **implementation complete; external acceptance pending**.
+
+- public deployment commit provenance through `X-CompatForge-Commit` on every web response;
+- browser acceptance verifies the exact build commit in CI and requires a full Git SHA on hosted smoke tests;
+- manual release preflight that binds the candidate to current protected `main`, an active repository ruleset, an unused release tag, enabled immutable releases and the exact production deployment commit;
+- fine-grained Administration-read token boundary used only to inspect GitHub's immutable-release setting;
+- top-level `v1.0.0-rc.N` / `v1.0.0` release path gated behind deterministic bundle verification, attestations and the live preflight;
+- draft-first GitHub Release assembly so all assets exist before immutability locks the published release;
+- post-publication `gh release verify` plus `gh release verify-asset` for every released artifact;
+- equivalent protected-main, ruleset and immutable-release gates for the six-platform hardware CLI release;
+- explicit first candidates `hw-cli-v0.3.0rc1` and `v1.0.0-rc.1` remain uncreated until external settings and hosted acceptance are green;
+- rollback policy preserves immutable tags/assets and uses a new candidate or semantic-versioned patch release after fixes;
+- final `v1.0.0` publication is explicitly blocked until repository settings, production deployment and account-backed hosted acceptance all pass.
+
+The initial Phase 8D audit found `main` unprotected, no active repository rulesets and no existing GitHub Releases, while the merged Phase 8C commit was already the READY Vercel production deployment with no runtime errors reported in the preceding seven days. Those repository-setting gaps remain deliberate release blockers rather than warnings.
+
+Before the first RC tag, enable GitHub release immutability, protect `main`, add active branch/tag rulesets, configure the Administration-read `COMPATFORGE_RELEASE_ADMIN_TOKEN`, and complete the documented Supabase/GitHub OAuth, moderator, publication-receipt and Phase 7C automation acceptance cycle. See `docs/RELEASE_ACCEPTANCE.md`.

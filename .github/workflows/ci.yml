@@ -218,6 +218,8 @@ jobs:
         run: npm run typecheck
 
       - name: Production build
+        env:
+          COMPATFORGE_BUILD_COMMIT: ${{ github.sha }}
         run: npm run build
 
       - name: Start production server
@@ -231,6 +233,7 @@ jobs:
       - name: Browser acceptance
         env:
           COMPATFORGE_BROWSER_BASE_URL: http://127.0.0.1:3100
+          COMPATFORGE_EXPECTED_COMMIT: ${{ github.sha }}
         run: node scripts/browser-acceptance.mjs
 
       - name: Add browser summary
