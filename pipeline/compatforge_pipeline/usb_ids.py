@@ -14,7 +14,7 @@ from compatforge_pipeline.identity import normalize_usb_hex, usb_device_id
 USB_IDS_URL = "https://usb-ids.gowdy.us/usb.ids.gz"
 USB_IDS_HOMEPAGE = "https://usb-ids.gowdy.us/"
 USB_IDS_LICENSE = "GPL-2.0-or-later OR BSD-3-Clause"
-USB_IDS_PARSER_VERSION = "1"
+USB_IDS_PARSER_VERSION = "2"
 USER_AGENT = "CompatForge/0.2 (+https://github.com/AaryaMody1301/CompatForge)"
 
 _VENDOR_LINE = re.compile(r"^([0-9A-Fa-f]{4})\s+(.+?)\s*$")
@@ -129,5 +129,5 @@ def source_sha256(content: bytes) -> str:
 def _decode_source(content: bytes) -> str:
     try:
         return content.decode("utf-8")
-    except UnicodeDecodeError as exc:
-        raise UsbIdsParseError("usb.ids must decode as UTF-8") from exc
+    except UnicodeDecodeError:
+        return content.decode("iso-8859-1")
