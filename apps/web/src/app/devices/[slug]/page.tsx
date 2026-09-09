@@ -29,6 +29,7 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
   if (!device) notFound();
 
   const evidence = getDeviceEvidence(device.id);
+  const hasEvidence = evidence.supportStatements.length > 0 || evidence.observations.length > 0;
   const timeline = [
     ...evidence.supportStatements.map((statement) => ({
       id: statement.statement_id,
@@ -55,40 +56,63 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
           <span>{evidence.supportStatements.length} support statement(s)</span>
           <span>{evidence.observations.length} observation(s)</span>
         </div>
-        <Link className="button button-primary" href={`/check?device=${encodeURIComponent(device.id)}`}>
-          Check this device
-        </Link>
+        <div className="actions">
+          <Link className="button button-primary" href={`/check?device=${encodeURIComponent(device.id)}`}>
+            Check this device
+          </Link>
+          <a className="button" href={device.identity_source} rel="noreferrer" target="_blank">
+            Identity source ↗
+          </a>
+        </div>
+        {!hasEvidence ? (
+          <div className="notice">
+            <strong>Compatibility evidence is unknown.</strong>
+            <p>
+              This USB identity is recognized, but CompatForge has not reviewed a matching vendor
+              support statement or real-world observation yet.
+            </p>
+          </div>
+        ) : null}
       </section>
 
       <section>
         <p className="eyebrow">Vendor support</p>
         <h2>Documented platform scope.</h2>
-        <div className="stack">
-          {evidence.supportStatements.map((statement) => (
-            <article className="evidence-card" key={statement.statement_id}>
-              <div className="evidence-heading">
-                <div>
-                  <h3>{formatOsFamily(statement.scope.operating_system.family)} {formatVersionScope(statement)}</h3>
-                  <p className="meta">
-                    {formatArchitecture(statement.scope.architecture)} · {formatConnection(statement.scope.connection.kind)} · reviewed {formatDate(statement.reviewed_at)}
-                  </p>
+        {evidence.supportStatements.length ? (
+          <div className="stack">
+            {evidence.supportStatements.map((statement) => (
+              <article className="evidence-card" key={statement.statement_id}>
+                <div className="evidence-heading">
+                  <div>
+                    <h3>{formatOsFamily(statement.scope.operating_system.family)} {formatVersionScope(statement)}</h3>
+                    <p className="meta">
+                      {formatArchitecture(statement.scope.architecture)} · {formatConnection(statement.scope.connection.kind)} · reviewed {formatDate(statement.reviewed_at)}
+                    </p>
+                  </div>
+                  <span className={`badge badge-${statement.support_status}`}>
+                    {statement.support_status.replaceAll("_", " ")}
+                  </span>
                 </div>
-                <span className={`badge badge-${statement.support_status}`}>{statement.support_status.replaceAll("_", " ")}</span>
-              </div>
-              {statement.conditions?.length ? (
-                <ul>{statement.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>
-              ) : null}
-              <p>{statement.evidence.source_note}</p>
-              <div className="sources">
-                {statement.evidence.sources.map((source) => (
-                  <a href={source.source_url} key={source.source_url} rel="noreferrer" target="_blank">
-                    {source.source_title} ↗
-                  </a>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
+                {statement.conditions?.length ? (
+                  <ul>{statement.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>
+                ) : null}
+                <p>{statement.evidence.source_note}</p>
+                <div className="sources">
+                  {statement.evidence.sources.map((source) => (
+                    <a href={source.source_url} key={source.source_url} rel="noreferrer" target="_blank">
+                      {source.source_title} ↗
+                    </a>
+                  ))}
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <h3>No reviewed vendor statement yet.</h3>
+            <p>Known identity does not imply documented platform support.</p>
+          </div>
+        )}
       </section>
 
       <section>
@@ -105,7 +129,9 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
                       {formatOsFamily(observation.host.operating_system.family)} {observation.host.operating_system.version} · {formatArchitecture(observation.host.architecture)} · {formatConnection(observation.connection_path[0].kind)}
                     </p>
                   </div>
-                  <span className={`badge badge-${observation.outcome}`}>{observation.outcome.replaceAll("_", " ")}</span>
+                  <span className={`badge badge-${observation.outcome}`}>
+                    {observation.outcome.replaceAll("_", " ")}
+                  </span>
                 </div>
                 {observation.conditions?.length ? (
                   <ul>{observation.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>
@@ -126,7 +152,7 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
         ) : (
           <div className="empty-state">
             <h3>No reviewed observation yet.</h3>
-            <p>Vendor support may still exist, but CompatForge will not convert it into an observed result.</p>
+            <p>CompatForge will not infer an observed result from identity or vendor support alone.</p>
           </div>
         )}
       </section>
@@ -134,14 +160,21 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
       <section>
         <p className="eyebrow">Timeline</p>
         <h2>When this evidence was observed or reviewed.</h2>
-        <ol className="timeline">
-          {timeline.map((item) => (
-            <li key={item.id}>
-              <time dateTime={item.date}>{formatDate(item.date)}</time>
-              <div><strong>{item.type}</strong><span>{item.label}</span></div>
-            </li>
-          ))}
-        </ol>
+        {timeline.length ? (
+          <ol className="timeline">
+            {timeline.map((item) => (
+              <li key={item.id}>
+                <time dateTime={item.date}>{formatDate(item.date)}</time>
+                <div><strong>{item.type}</strong><span>{item.label}</span></div>
+              </li>
+            ))}
+          </ol>
+        ) : (
+          <div className="empty-state">
+            <h3>No evidence timeline yet.</h3>
+            <p>This page will populate as reviewed compatibility evidence is added.</p>
+          </div>
+        )}
       </section>
     </main>
   );
