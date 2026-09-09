@@ -174,6 +174,30 @@ const cases = [
     ],
   },
   {
+    name: "checker-invalid-device",
+    pathname:
+      "/check?device=usb%3ADEAD%3ABEEF&os=windows&version=11&architecture=arm64&connection=unspecified&host_manufacturer=Acer&host_model=Aspire%2014%20AI%20%282025%29",
+    status: 200,
+    includes: [
+      "Invalid configuration.",
+      "device is outside the reviewed checker options.",
+      "No compatibility claim was generated.",
+    ],
+    excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
+  },
+  {
+    name: "checker-invalid-architecture",
+    pathname:
+      "/check?device=usb%3A0403%3A6001&os=windows&version=11&architecture=sparc&connection=unspecified&host_manufacturer=Acer&host_model=Aspire%2014%20AI%20%282025%29",
+    status: 200,
+    includes: [
+      "Invalid configuration.",
+      "architecture is outside the reviewed checker options.",
+      "No compatibility claim was generated.",
+    ],
+    excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
+  },
+  {
     name: "coverage",
     pathname: "/coverage",
     status: 200,
@@ -230,6 +254,11 @@ try {
         throw new Error(`${testCase.name}: browser DOM did not contain ${JSON.stringify(expected)}`);
       }
     }
+    for (const forbidden of testCase.excludes ?? []) {
+      if (assertedHtml.includes(forbidden)) {
+        throw new Error(`${testCase.name}: browser DOM contained forbidden ${JSON.stringify(forbidden)}`);
+      }
+    }
     for (const alternatives of testCase.includesAny ?? []) {
       if (!alternatives.some((expected) => assertedHtml.includes(expected))) {
         throw new Error(
@@ -249,6 +278,7 @@ try {
       pathname: testCase.pathname,
       status: response.status,
       required_text: testCase.includes,
+      forbidden_text: testCase.excludes ?? [],
       alternative_text_groups: testCase.includesAny ?? [],
       security_headers: securityHeaders,
       deployment_commit: deploymentCommit,
@@ -269,7 +299,7 @@ try {
 }
 
 const report = {
-  report_version: 3,
+  report_version: 4,
   base_url: baseUrl,
   browser: versionProbe.stdout.trim(),
   expected_commit: expectedCommit,
@@ -294,16 +324,16 @@ const summary = [
   `- Required security headers: **${Object.keys(requiredSecurityHeaders).length}**`,
   `- Expected commit: \`${expectedCommit ?? (localTarget ? "local or full SHA" : "full SHA")}\``,
   "",
-  "| Case | HTTP | Required markers | Alternative groups | Security headers | Commit |",
-  "| --- | ---: | ---: | ---: | ---: | --- |",
+  "| Case | HTTP | Required markers | Forbidden markers | Alternative groups | Security headers | Commit |",
+  "| --- | ---: | ---: | ---: | ---: | ---: | --- |",
   ...results.map(
     (item) =>
-      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.alternative_text_groups.length} | ${Object.keys(item.security_headers).length} | \`${item.deployment_commit}\` |`,
+      `| \`${item.name}\` | ${item.status} | ${item.required_text.length} | ${item.forbidden_text.length} | ${item.alternative_text_groups.length} | ${Object.keys(item.security_headers).length} | \`${item.deployment_commit}\` |`,
   ),
   "",
   failure
     ? `Failure: ${failure}`
-    : "All required routes rendered their reviewed acceptance markers, security headers, and deployment commit provenance.",
+    : "All required routes rendered their reviewed acceptance markers, rejected forbidden markers, security headers, and deployment commit provenance.",
   "",
 ].join("\n");
 writeFileSync(path.join(artifactDir, "summary.md"), summary, "utf8");
