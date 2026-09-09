@@ -24,28 +24,47 @@ function value(params: SearchParams, key: string) {
   return typeof params[key] === "string" ? params[key] : "";
 }
 
-function member<T extends readonly string[]>(values: T, candidate: string, fallback: T[number]) {
-  return values.includes(candidate as T[number]) ? (candidate as T[number]) : fallback;
+function member<T extends readonly string[]>(values: T, candidate: string): T[number] | null {
+  return values.includes(candidate as T[number]) ? (candidate as T[number]) : null;
 }
 
 export default async function CheckPage({ searchParams }: Props) {
   const params = await searchParams;
-  const deviceId = getDeviceById(value(params, "device"))?.id ?? devices[0].id;
-  const architecture = member(architectures, value(params, "architecture"), "arm64") as Architecture;
-  const osFamily = member(osFamilies, value(params, "os"), "windows") as OsFamily;
-  const connectionKind = member(
-    connectionKinds,
-    value(params, "connection"),
-    "direct_port",
-  ) as ConnectionKind;
-  const osVersion = value(params, "version") || "11";
+  const rawDeviceId = value(params, "device");
+  const rawArchitecture = value(params, "architecture");
+  const rawOsFamily = value(params, "os");
+  const rawConnectionKind = value(params, "connection");
+  const rawOsVersion = value(params, "version");
+
+  const requestedDevice = rawDeviceId ? getDeviceById(rawDeviceId) : undefined;
+  const requestedArchitecture = rawArchitecture ? member(architectures, rawArchitecture) : null;
+  const requestedOsFamily = rawOsFamily ? member(osFamilies, rawOsFamily) : null;
+  const requestedConnectionKind = rawConnectionKind
+    ? member(connectionKinds, rawConnectionKind)
+    : null;
+
+  const device = requestedDevice ?? devices[0];
+  const architecture = (requestedArchitecture ?? "arm64") as Architecture;
+  const osFamily = (requestedOsFamily ?? "windows") as OsFamily;
+  const connectionKind = (requestedConnectionKind ?? "direct_port") as ConnectionKind;
+  const osVersion = rawOsVersion || "11";
   const hostManufacturer = value(params, "host_manufacturer");
   const hostModel = value(params, "host_model");
-  const hasQuery = Boolean(value(params, "device") && value(params, "architecture") && value(params, "os") && value(params, "connection") && value(params, "version"));
-  const device = getDeviceById(deviceId)!;
-  const result = hasQuery
+
+  const hasQuery = Boolean(
+    rawDeviceId && rawArchitecture && rawOsFamily && rawConnectionKind && rawOsVersion,
+  );
+  const invalidFields = [
+    rawDeviceId && !requestedDevice ? "device" : null,
+    rawArchitecture && !requestedArchitecture ? "architecture" : null,
+    rawOsFamily && !requestedOsFamily ? "operating system" : null,
+    rawConnectionKind && !requestedConnectionKind ? "connection" : null,
+  ].filter((field): field is string => field !== null);
+  const hasInvalidQuery = invalidFields.length > 0;
+
+  const result = hasQuery && !hasInvalidQuery && requestedDevice
     ? resolveCompatibility({
-        deviceId,
+        deviceId: requestedDevice.id,
         architecture,
         osFamily,
         osVersion,
@@ -54,7 +73,7 @@ export default async function CheckPage({ searchParams }: Props) {
         hostModel: hostModel || undefined,
       })
     : null;
-  const related = getDeviceEvidence(deviceId);
+  const related = getDeviceEvidence(device.id);
 
   return (
     <main className="shell page-stack">
@@ -71,7 +90,7 @@ export default async function CheckPage({ searchParams }: Props) {
         <form className="config-form" action="/check" method="get">
           <label>
             Device
-            <select name="device" defaultValue={deviceId} required>
+            <select name="device" defaultValue={device.id} required>
               {devices.map((option) => (
                 <option key={option.id} value={option.id}>{option.manufacturer} {option.name}</option>
               ))}
@@ -111,6 +130,19 @@ export default async function CheckPage({ searchParams }: Props) {
         </form>
       </section>
 
+      {hasInvalidQuery ? (
+        <section aria-live="polite">
+          <div className="notice">
+            <strong>Invalid configuration.</strong>
+            <p>
+              {invalidFields.join(", ")} {invalidFields.length === 1 ? "is" : "are"} outside the
+              reviewed checker options. No compatibility claim was generated. Choose values from the
+              form and try again.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
       {result ? (
         <section>
           <p className="eyebrow">Result</p>
@@ -129,7 +161,11 @@ export default async function CheckPage({ searchParams }: Props) {
             <article className="result-card">
               <span className="result-label">Vendor support</span>
               <strong className={`result-state badge-${result.supportState}`}>{result.supportState.replaceAll("_", " ")}</strong>
-              <p>{result.supportStatements.length ? `${result.supportStatements.length} best-matching support statement(s).` : "No reviewed vendor statement matches this request."}</p>
+              <p>
+                {result.supportStatements.length
+                  ? `${result.supportStatements.length} best-matching support ${result.supportStatements.length === 1 ? "statement" : "statements"}.`
+                  : "No reviewed vendor statement matches this request."}
+              </p>
             </article>
           </div>
 
