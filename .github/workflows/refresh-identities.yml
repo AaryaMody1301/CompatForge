@@ -39,7 +39,11 @@ jobs:
       - name: Build analytical identity models
         env:
           COMPATFORGE_DUCKDB_PATH: ${{ github.workspace }}/build/live/compatforge.duckdb
-        run: dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
+        run: >-
+          dbt build
+          --project-dir dbt/compatforge
+          --profiles-dir dbt/compatforge
+          --select +device_catalog
 
       - name: Export public identity snapshot
         run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/live
