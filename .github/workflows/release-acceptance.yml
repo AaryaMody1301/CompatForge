@@ -82,9 +82,10 @@ jobs:
           --output build/release-acceptance/report.json
 
       - name: Upload acceptance report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: compatforge-release-acceptance
           path: build/release-acceptance/
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
