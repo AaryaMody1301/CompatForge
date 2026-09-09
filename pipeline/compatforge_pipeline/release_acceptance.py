@@ -63,7 +63,8 @@ def _fetch_headers(url: str) -> dict[str, str]:
         with urllib.request.urlopen(_request(url, method="HEAD"), timeout=15) as response:
             return {key.lower(): value for key, value in response.headers.items()}
     except urllib.error.URLError as exc:
-        raise ReleaseAcceptanceError(f"could not read production deployment headers from {url}") from exc
+        message = f"could not read production deployment headers from {url}"
+        raise ReleaseAcceptanceError(message) from exc
 
 
 def _active_rulesets(rulesets: Any) -> list[dict[str, Any]]:
@@ -117,10 +118,11 @@ def evaluate_acceptance(
         }
     )
 
+    release_items = releases if isinstance(releases, list) else []
     existing_tags = sorted(
         str(item.get("tag_name"))
-        for item in releases
-        if isinstance(releases, list) and isinstance(item, dict) and item.get("tag_name")
+        for item in release_items
+        if isinstance(item, dict) and item.get("tag_name")
     )
     checks.append(
         {
@@ -233,10 +235,11 @@ def main() -> int:
     args = _parser().parse_args()
     token = os.environ.get(args.github_token_env, "").strip()
     if not token:
-        print(
-            f"release acceptance failed: {args.github_token_env} is required to verify immutable releases",
-            file=sys.stderr,
+        message = (
+            f"release acceptance failed: {args.github_token_env} is required "
+            "to verify immutable releases"
         )
+        print(message, file=sys.stderr)
         return 1
     try:
         report = inspect_live_state(
