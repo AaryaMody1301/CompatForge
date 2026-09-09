@@ -47,7 +47,7 @@ function renderIndex(observationFiles, vendorFiles) {
   observationFiles.forEach((_, index) => lines.push(`  observation${index},`));
   lines.push("] as const;", "", "export const canonicalSupportStatementDocuments = [");
   vendorFiles.forEach((_, index) => lines.push(`  supportStatement${index},`));
-  lines.push("] as const;", "");
+  lines.push("] as const;");
 
   return `${lines.join("\n")}\n`;
 }
