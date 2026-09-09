@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from compatforge_pipeline.release_acceptance import (
     ReleaseAcceptanceError,
     evaluate_acceptance,
