@@ -16,8 +16,10 @@ _COMMIT_RE = re.compile(r"^[0-9a-f]{40}$")
 
 SOURCE_GROUPS: dict[str, tuple[str, ...]] = {
     "identity": (
+        "data/catalog",
         "data/sources/usb_ids.json",
         "apps/web/src/lib/catalog.ts",
+        "pipeline/compatforge_pipeline/usb_ids.py",
     ),
     "evidence": (
         "data/evidence/observations",
@@ -194,9 +196,7 @@ def write_release_files(
         _file_entry(release_root, manifest_path),
     ]
     checksum_entries.sort(key=lambda item: item["path"])
-    checksums = "".join(
-        f"{item['sha256']}  {item['path']}\n" for item in checksum_entries
-    )
+    checksums = "".join(f"{item['sha256']}  {item['path']}\n" for item in checksum_entries)
     checksums_path.write_text(checksums, encoding="utf-8", newline="\n")
     return manifest_path, checksums_path
 
@@ -239,9 +239,7 @@ def verify_manifest(
 
     actual_groups = collect_source_groups(repository_root)
     if actual_groups != manifest.get("source_groups"):
-        raise ReleaseManifestError(
-            "reviewed repository source hashes do not match release manifest"
-        )
+        raise ReleaseManifestError("reviewed repository source hashes do not match release manifest")
 
     recorded_artifacts = manifest.get("release_artifacts")
     if not isinstance(recorded_artifacts, list) or not recorded_artifacts:
