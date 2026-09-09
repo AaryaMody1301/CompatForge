@@ -5,6 +5,7 @@ export type Device = {
   slug: string;
   manufacturer: string;
   name: string;
+  aliases: string[];
   category: string;
   summary: string;
   identity_source: string;
