@@ -1,9 +1,7 @@
-import ftdiWindowsArm64 from "../../../../data/evidence/vendor/ftdi-ft232r-windows11-arm64.json";
-import avrdudeFtdiWindowsArm64 from "../../../../data/evidence/observations/avrdude-ft232r-windows11-arm64.json";
-import saleaeMacArm64 from "../../../../data/evidence/vendor/saleae-logic-pro-8-macos-arm64.json";
-import saleaeMacX64 from "../../../../data/evidence/vendor/saleae-logic-pro-8-macos-x64.json";
-import saleaeWindowsArm64 from "../../../../data/evidence/vendor/saleae-logic-pro-8-windows-arm64.json";
-import saleaeWindowsX64 from "../../../../data/evidence/vendor/saleae-logic-pro-8-windows-x64.json";
+import {
+  canonicalObservationDocuments,
+  canonicalSupportStatementDocuments,
+} from "./evidence.generated";
 
 export const architectures = ["x86_64", "arm64"] as const;
 export const osFamilies = ["windows", "macos", "ubuntu"] as const;
@@ -89,17 +87,11 @@ export type Observation = {
   notes?: string;
 };
 
-export const supportStatements: readonly SupportStatement[] = [
-  ftdiWindowsArm64 as SupportStatement,
-  saleaeMacArm64 as SupportStatement,
-  saleaeMacX64 as SupportStatement,
-  saleaeWindowsArm64 as SupportStatement,
-  saleaeWindowsX64 as SupportStatement,
-];
+export const supportStatements: readonly SupportStatement[] =
+  canonicalSupportStatementDocuments as unknown as readonly SupportStatement[];
 
-export const observations: readonly Observation[] = [
-  avrdudeFtdiWindowsArm64 as Observation,
-];
+export const observations: readonly Observation[] =
+  canonicalObservationDocuments as unknown as readonly Observation[];
 
 export type CompatibilityQuery = {
   deviceId: string;
