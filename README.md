@@ -1,60 +1,82 @@
 # CompatForge
 
-Evidence-first hardware compatibility intelligence.
+Evidence-first hardware compatibility intelligence for developer USB peripherals.
 
-CompatForge answers a narrow but difficult question:
+CompatForge answers a configuration-level question:
 
-> Will this peripheral work with this host, operating system, architecture, driver, firmware, and connection path - and what evidence supports that answer?
+> Will this peripheral work with this host, operating system, architecture, driver, firmware, and connection path — and what evidence supports that answer?
 
-The project treats compatibility as a configuration-level evidence problem rather than a binary device-to-laptop lookup. Missing evidence stays `UNKNOWN`; conflicting evidence stays visible; vendor support is never rewritten into a reproduced success.
+A known USB identity is not a compatibility claim. Missing evidence stays `UNKNOWN`, conflicting evidence stays visible, and vendor support is kept separate from reproduced observations.
 
-## Current build status
+## Release preview status
 
-**Phase 1 - foundation and evidence contracts:** complete.
+The implementation roadmap through Phase 8 is complete. The repository now includes:
 
-**Phase 2 - hardware identity data platform:** complete. The repository has reviewed USB identity ingestion, content-addressed raw snapshots, source manifests, Bronze Parquet/DuckDB tables, dbt staging/intermediate/mart models, deterministic public snapshot export, and scheduled refresh candidates.
+- deterministic USB identity ingestion and reviewed release-preview catalog data;
+- reviewed compatibility evidence with explicit provenance and freshness;
+- a deterministic compatibility resolver;
+- a Next.js web product with browser acceptance and production security-header checks;
+- a privacy-minimized cross-platform diagnostic CLI with six native build targets;
+- authenticated community submission, moderation, and controlled publication contracts;
+- scheduled source-health, vendor-change, coverage, and refresh operations;
+- dependency audits, CodeQL, SBOMs, immutable release manifests, attestations, and release acceptance gates.
 
-**Phase 3 - compatibility evidence and resolver:** complete. Reviewed support statements and observations flow through DuckDB/dbt evidence models, deterministic freshness/coverage marts, public evidence snapshots, and a resolver that keeps observed compatibility separate from vendor support.
+The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external release-acceptance settings documented in [`docs/RELEASE_ACCEPTANCE.md`](docs/RELEASE_ACCEPTANCE.md) are green.
 
-**Phase 4 - public web MVP:** complete and deployed on Vercel.
+## Device coverage
 
-**Phase 5 - local diagnostic agent:** active. Phase 5A established privacy-first cross-platform collection. Phase 5B completed target-scoped driver context, a deterministic packaged compatibility snapshot, and offline resolver explanations. Phase 5C is building an attestable cross-platform standalone CLI and an explicit local-only contribution handoff.
+The release-preview web catalog contains known developer-device identities separately from compatibility evidence. Identity-only devices can be searched and checked, but they return unknown compatibility until reviewed support statements or observations exist.
 
-## Initial scope
-
-The first public compatibility release focuses on developer and engineering USB peripherals, initially USB serial adapters and logic analyzers across Windows, macOS, and Ubuntu on `x86_64` and `arm64`.
+The current preview catalog covers FTDI FT232/FT2232/FT4232/FT232H, Silicon Labs CP210x/CP2105/CP2108, QinHeng CH340/CH9102, and Saleae Logic Pro 8. The identity refresh pipeline uses the upstream USB ID Repository to prepare broader deterministic candidates for review.
 
 ## Repository layout
 
 ```text
-apps/web/                     Next.js public product
-pipeline/compatforge_pipeline Python identity/evidence/local-agent tooling
-dbt/compatforge/               DuckDB/dbt identity + evidence transformations
-data/sources/                  reviewed upstream-source contracts
-data/evidence/                 reviewed support statements and observations
-data/fixtures/                 public synthetic contract fixtures
-tests/fixtures/evidence/       synthetic evidence pipeline fixtures
-schemas/                       public JSON Schema contracts
-tests/                         contract, resolver, diagnostic, and pipeline tests
-tools/                         release packaging helpers and frozen entry point
-docs/                          architecture, evidence, web, privacy, roadmap
-.github/workflows/             CI, refresh, and CLI release workflows
+apps/web/                     Next.js web product
+pipeline/compatforge_pipeline Python identity, evidence, diagnostics, and release tooling
+dbt/compatforge/              DuckDB/dbt transformations
+data/catalog/                 reviewed web identity catalog
+data/sources/                 upstream-source contracts and vendor baselines
+data/evidence/                reviewed support statements and observations
+data/fixtures/                public synthetic contract fixtures
+schemas/                      public JSON Schema contracts
+supabase/                     database migrations and pgTAP tests
+tests/                        Python contract and pipeline tests
+tools/                        deterministic packaging helpers
+.github/workflows/            CI, security, refresh, and release workflows
+docs/                         architecture and operating documentation
 ```
 
-## Validate contracts
+## Validate the repository
 
 Python 3.13+:
 
 ```bash
-python -m pip install -e ".[dev]"
-python -m compatforge_pipeline.validate data/fixtures data/evidence/vendor data/evidence/observations
-pytest -q
+python -m pip install -e ".[dev,data]"
 ruff check pipeline tests
+pytest -q
+python -m compatforge_pipeline.validate \
+  data/fixtures \
+  data/evidence/vendor \
+  data/evidence/observations
+compatforge-snapshot verify \
+  --observations data/evidence/observations \
+  --support data/evidence/vendor
 ```
 
-## Run the local diagnostic workflow
+Web:
 
-The Phase 5C end-user surface is one command:
+```bash
+cd apps/web
+npm ci
+npm run lint
+npm run typecheck
+npm run build
+```
+
+The full pull-request matrix additionally runs deterministic data builds, browser acceptance, dependency audits, CodeQL, Supabase migration/RLS tests, release-provenance verification, and all six frozen CLI builds.
+
+## Local diagnostic CLI
 
 ```bash
 compatforge-hw diagnose \
@@ -68,9 +90,7 @@ compatforge-hw explain \
 compatforge-hw snapshot-info
 ```
 
-The diagnostic manifest contains allowlisted machine facts; the explanation is a separate derived record backed by the packaged reviewed snapshot. These commands run locally and do not upload data.
-
-An optional future-contribution handoff requires explicit export approval and still writes only a local JSON file:
+Diagnostics and explanations run locally. Contribution preparation requires explicit export approval and still produces only a local, non-evidence-ready JSON handoff:
 
 ```bash
 compatforge-hw prepare-contribution \
@@ -80,34 +100,9 @@ compatforge-hw prepare-contribution \
   --output contribution-handoff.json
 ```
 
-The handoff is marked `evidence_ready: false`; it is not a compatibility observation. See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md), [`docs/PRIVACY.md`](docs/PRIVACY.md), and [`docs/CLI_RELEASE.md`](docs/CLI_RELEASE.md).
+See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md), [`docs/PRIVACY.md`](docs/PRIVACY.md), and [`docs/CLI_RELEASE.md`](docs/CLI_RELEASE.md).
 
-## Build the identity + evidence platform locally
-
-```bash
-python -m pip install -e ".[dev,data]"
-
-python -m compatforge_pipeline.identity_pipeline bronze \
-  --workspace build/local \
-  --input tests/fixtures/usb.ids \
-  --retrieved-at 2026-01-01T00:00:00Z \
-  --source-url synthetic://tests/fixtures/usb.ids
-
-python -m compatforge_pipeline.evidence_pipeline ingest \
-  --workspace build/local \
-  --observations tests/fixtures/evidence/observations \
-  --support tests/fixtures/evidence/support \
-  --as-of 2026-09-07T00:00:00Z
-
-export COMPATFORGE_DUCKDB_PATH="$PWD/build/local/compatforge.duckdb"
-dbt build --project-dir dbt/compatforge --profiles-dir dbt/compatforge
-python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/local
-python -m compatforge_pipeline.evidence_pipeline snapshot --workspace build/local
-```
-
-See [`docs/EVIDENCE_DATA_PLATFORM.md`](docs/EVIDENCE_DATA_PLATFORM.md).
-
-## Resolve a compatibility query
+## Compatibility resolver
 
 ```bash
 python -m compatforge_pipeline.resolver \
@@ -116,32 +111,21 @@ python -m compatforge_pipeline.resolver \
   --support data/evidence/vendor
 ```
 
-The resolver returns two separate answers: an observed claim and a vendor/support state.
+The resolver returns separate observed-compatibility and vendor-support states.
 
-## Run the public web MVP
-
-From `apps/web`:
-
-```bash
-npm ci
-npm run dev
-```
-
-The web app imports reviewed JSON evidence directly from `data/evidence/`; it does not require a live database or paid API. See [`docs/WEB_MVP.md`](docs/WEB_MVP.md).
-
-## Project principles
+## Principles
 
 1. Unknown is a valid result.
-2. Evidence and derived claims are separate records.
-3. Hardware identity and compatibility outcomes are separate data domains.
-4. Vendor support and reproduced compatibility are separate evidence classes.
-5. Missing configuration facts remain explicit unknowns rather than assumptions.
-6. Compatibility specificity must never be silently broadened.
-7. Conflicting evidence is preserved, not averaged away.
-8. Raw source provenance and licensing are release requirements.
-9. Diagnostic collection must be inspectable and privacy-minimized.
-10. Preparing a contribution and publishing evidence are separate, explicit actions.
+2. Hardware identity and compatibility evidence are separate data domains.
+3. Vendor support and reproduced compatibility are separate evidence classes.
+4. Missing configuration facts remain explicit unknowns.
+5. Compatibility specificity is never silently broadened.
+6. Conflicting evidence is preserved.
+7. Provenance and licensing are release requirements.
+8. Diagnostic collection is inspectable and privacy-minimized.
+9. Database acceptance and public evidence publication are separate actions.
+10. Release artifacts are deterministic, hashed, and verified before publication.
 
 ## License
 
-Project source code is MIT licensed. Third-party source data keeps its upstream license and attribution requirements; see `THIRD_PARTY_NOTICES.md` and per-snapshot manifests.
+Project source code is MIT licensed. Third-party source data retains its upstream license and attribution requirements; see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and snapshot manifests.
