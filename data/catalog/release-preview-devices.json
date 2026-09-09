@@ -4,6 +4,7 @@
     "slug": "ftdi-ft232r",
     "manufacturer": "FTDI",
     "name": "FT232 USB-Serial (UART) IC",
+    "aliases": ["FT232R", "FT232"],
     "category": "USB serial",
     "summary": "FTDI single-channel USB-to-UART bridge. CompatForge has reviewed support and observed compatibility evidence for this identity.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/0403"
@@ -13,6 +14,7 @@
     "slug": "ftdi-ft2232c",
     "manufacturer": "FTDI",
     "name": "FT2232C Dual USB-UART/FIFO IC",
+    "aliases": ["FT2232C", "FT2232D", "FT2232H"],
     "category": "USB serial / JTAG",
     "summary": "Dual-channel FTDI bridge used for UART, FIFO, and development/debug interfaces. Identity is known; compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/0403"
@@ -22,6 +24,7 @@
     "slug": "ftdi-ft4232h",
     "manufacturer": "FTDI",
     "name": "FT4232H Quad HS USB-UART/FIFO IC",
+    "aliases": ["FT4232H"],
     "category": "USB serial",
     "summary": "Four-channel high-speed FTDI UART/FIFO bridge. Identity is known; compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/0403"
@@ -31,6 +34,7 @@
     "slug": "ftdi-ft232h",
     "manufacturer": "FTDI",
     "name": "FT232H Single HS USB-UART/FIFO IC",
+    "aliases": ["FT232H"],
     "category": "USB serial / GPIO",
     "summary": "High-speed FTDI bridge commonly used for UART, MPSSE, SPI, and I2C development workflows. Identity is known; compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/0403"
@@ -40,6 +44,7 @@
     "slug": "silicon-labs-cp210x",
     "manufacturer": "Silicon Labs",
     "name": "CP210x UART Bridge",
+    "aliases": ["CP210x", "CP2102", "CP2104"],
     "category": "USB serial",
     "summary": "Silicon Labs CP210x USB-to-UART bridge family identity. Compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/10c4"
@@ -49,6 +54,7 @@
     "slug": "silicon-labs-cp2105",
     "manufacturer": "Silicon Labs",
     "name": "CP2105 Dual UART Bridge",
+    "aliases": ["CP2105"],
     "category": "USB serial",
     "summary": "Dual-channel Silicon Labs USB-to-UART bridge identity. Compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/10c4"
@@ -58,6 +64,7 @@
     "slug": "silicon-labs-cp2108",
     "manufacturer": "Silicon Labs",
     "name": "CP2108 Quad UART Bridge",
+    "aliases": ["CP2108"],
     "category": "USB serial",
     "summary": "Four-channel Silicon Labs USB-to-UART bridge identity. Compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/10c4"
@@ -67,6 +74,7 @@
     "slug": "qinheng-ch340",
     "manufacturer": "QinHeng Electronics",
     "name": "CH340 Serial Converter",
+    "aliases": ["CH340", "WCH CH340"],
     "category": "USB serial",
     "summary": "Common WCH/QinHeng USB-to-serial converter identity. Compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/1a86/7523"
@@ -76,6 +84,7 @@
     "slug": "qinheng-ch9102",
     "manufacturer": "QinHeng Electronics",
     "name": "CH9102 Serial Converter",
+    "aliases": ["CH9102", "WCH CH9102"],
     "category": "USB serial",
     "summary": "WCH/QinHeng CH9102 USB-to-serial converter identity. Compatibility remains unknown until reviewed evidence is added.",
     "identity_source": "https://usb-ids.gowdy.us/read/UD/1a86/55d4"
@@ -85,6 +94,7 @@
     "slug": "saleae-logic-pro-8",
     "manufacturer": "Saleae",
     "name": "Logic Pro 8",
+    "aliases": ["Saleae Logic Pro 8"],
     "category": "Logic analyzer",
     "summary": "Eight-channel logic analyzer with reviewed vendor support evidence across current desktop platforms.",
     "identity_source": "https://www.saleae.com/products/saleae-logic-pro-8"
