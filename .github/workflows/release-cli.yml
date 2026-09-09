@@ -10,6 +10,7 @@ on:
       - "tools/**"
       - "pyproject.toml"
       - "docs/CLI_RELEASE.md"
+      - "docs/RELEASE_ACCEPTANCE.md"
       - ".github/workflows/release-cli.yml"
   workflow_dispatch:
   push:
@@ -160,7 +161,7 @@ jobs:
           retention-days: 14
 
   release:
-    name: Publish immutable-ready GitHub Release
+    name: Publish and verify immutable CLI release
     if: startsWith(github.ref, 'refs/tags/hw-cli-v')
     needs: build
     runs-on: ubuntu-latest
@@ -174,6 +175,27 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
+
+      - name: Require protected main at tagged commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          protected="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.protected')"
+          rulesets="$(gh api "repos/$GITHUB_REPOSITORY/rulesets?includes_parents=true" --jq '[.[] | select(.enforcement == "active" or .enforcement == "always")] | length')"
+          [[ "$main_sha" == "$GITHUB_SHA" ]] || { echo "tag is not at current main" >&2; exit 1; }
+          [[ "$protected" == "true" ]] || { echo "main is not protected" >&2; exit 1; }
+          (( rulesets > 0 )) || { echo "no active repository ruleset" >&2; exit 1; }
+
+      - name: Require immutable releases
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_RELEASE_ADMIN_TOKEN }}
+        shell: bash
+        run: |
+          [[ -n "$GH_TOKEN" ]] || { echo "COMPATFORGE_RELEASE_ADMIN_TOKEN is required" >&2; exit 1; }
+          enabled="$(gh api -H 'X-GitHub-Api-Version: 2026-03-10' "repos/$GITHUB_REPOSITORY/immutable-releases" --jq '.enabled')"
+          [[ "$enabled" == "true" ]] || { echo "immutable releases are not enabled" >&2; exit 1; }
 
       - name: Download platform artifacts
         uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
@@ -189,18 +211,28 @@ jobs:
           --tag "$GITHUB_REF_NAME"
           --commit "$GITHUB_SHA"
 
-      - name: Publish GitHub Release
+      - name: Create draft release with all assets
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          prerelease=()
+          flags=(--draft --verify-tag --generate-notes --title "CompatForge Hardware CLI $GITHUB_REF_NAME")
           if [[ "$GITHUB_REF_NAME" == *"rc"* || "$GITHUB_REF_NAME" == *"alpha"* || "$GITHUB_REF_NAME" == *"beta"* ]]; then
-            prerelease+=(--prerelease)
+            flags+=(--prerelease)
           fi
-          gh release create "$GITHUB_REF_NAME" \
-            release-assets/* \
-            --verify-tag \
-            --generate-notes \
-            --title "CompatForge Hardware CLI $GITHUB_REF_NAME" \
-            "${prerelease[@]}"
+          gh release create "$GITHUB_REF_NAME" release-assets/* "${flags[@]}"
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "$GITHUB_REF_NAME" --draft=false
+
+      - name: Verify immutable release and every asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release verify "$GITHUB_REF_NAME"
+          for asset in release-assets/*; do
+            gh release verify-asset "$GITHUB_REF_NAME" "$asset"
+          done
