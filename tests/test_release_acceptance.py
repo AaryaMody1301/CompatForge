@@ -8,6 +8,18 @@ from compatforge_pipeline.release_acceptance import (
 
 COMMIT = "a" * 40
 TAG = "v1.0.0-rc.1"
+BRANCH_RULESET = {
+    "name": "main protection",
+    "target": "branch",
+    "enforcement": "active",
+    "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+}
+TAG_RULESET = {
+    "name": "release tag protection",
+    "target": "tag",
+    "enforcement": "active",
+    "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
+}
 
 
 def _report(
@@ -22,11 +34,7 @@ def _report(
         expected_commit=COMMIT,
         release_tag=TAG,
         branch={"commit": {"sha": COMMIT}, "protected": protected},
-        rulesets=(
-            [{"name": "release protection", "enforcement": "active"}]
-            if rulesets is None
-            else rulesets
-        ),
+        rulesets=[BRANCH_RULESET, TAG_RULESET] if rulesets is None else rulesets,
         releases=[] if releases is None else releases,
         immutable_releases={"enabled": immutable, "enforced_by_owner": False},
         production_headers={"x-compatforge-commit": production_commit},
@@ -49,10 +57,35 @@ def test_release_acceptance_rejects_unprotected_main() -> None:
     assert _check(report, "main_protected")["passed"] is False
 
 
-def test_release_acceptance_requires_active_ruleset() -> None:
-    report = _report(rulesets=[])
+def test_release_acceptance_requires_ruleset_for_main() -> None:
+    report = _report(rulesets=[TAG_RULESET])
     assert report["passed"] is False
-    assert _check(report, "active_repository_ruleset")["observed"] == []
+    assert _check(report, "main_ruleset")["observed"] == []
+
+
+def test_release_acceptance_requires_ruleset_for_exact_release_tag() -> None:
+    unrelated_tag_ruleset = {
+        **TAG_RULESET,
+        "conditions": {"ref_name": {"include": ["refs/tags/docs-*"], "exclude": []}},
+    }
+    report = _report(rulesets=[BRANCH_RULESET, unrelated_tag_ruleset])
+    assert report["passed"] is False
+    assert _check(report, "release_tag_ruleset")["observed"] == []
+
+
+def test_release_acceptance_honors_ruleset_exclusions() -> None:
+    excluded_tag_ruleset = {
+        **TAG_RULESET,
+        "conditions": {
+            "ref_name": {
+                "include": ["refs/tags/v*"],
+                "exclude": [f"refs/tags/{TAG}"],
+            }
+        },
+    }
+    report = _report(rulesets=[BRANCH_RULESET, excluded_tag_ruleset])
+    assert report["passed"] is False
+    assert _check(report, "release_tag_ruleset")["passed"] is False
 
 
 def test_release_acceptance_rejects_existing_tag() -> None:
@@ -80,7 +113,7 @@ def test_release_acceptance_rejects_out_of_scope_tags(tag: str) -> None:
             expected_commit=COMMIT,
             release_tag=tag,
             branch={"commit": {"sha": COMMIT}, "protected": True},
-            rulesets=[{"name": "release protection", "enforcement": "active"}],
+            rulesets=[BRANCH_RULESET, TAG_RULESET],
             releases=[],
             immutable_releases={"enabled": True},
             production_headers={"x-compatforge-commit": COMMIT},
