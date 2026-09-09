@@ -27,7 +27,7 @@ The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external r
 
 The release-preview web catalog contains known developer-device identities separately from compatibility evidence. Identity-only devices can be searched and checked, but they return unknown compatibility until reviewed support statements or observations exist.
 
-The current preview catalog covers FTDI FT232/FT2232/FT4232/FT232H, Silicon Labs CP210x/CP2105/CP2108, QinHeng CH340/CH9102, and Saleae Logic Pro 8. The identity refresh pipeline uses the upstream USB ID Repository to prepare broader deterministic candidates for review.
+The current preview catalog covers FTDI FT232/FT2232/FT4232/FT232H, Silicon Labs CP210x/CP2105/CP2108, QinHeng CH340/CH341, and Saleae Logic Pro 8. The identity refresh pipeline uses the upstream USB ID Repository to prepare broader deterministic candidates for review.
 
 ## Repository layout
 
