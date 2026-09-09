@@ -1,6 +1,15 @@
 name: Refresh USB identity snapshot
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "data/catalog/**"
+      - "pipeline/compatforge_pipeline/usb_ids.py"
+      - "pipeline/compatforge_pipeline/identity_pipeline.py"
+      - "dbt/compatforge/**"
+      - ".github/workflows/refresh-identities.yml"
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
