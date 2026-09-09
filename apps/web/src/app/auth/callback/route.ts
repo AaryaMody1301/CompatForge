@@ -1,13 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { safeInternalPath } from "@/lib/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-
-function safeNextPath(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/submissions";
-  }
-  return value;
-}
 
 export async function GET(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -26,6 +20,6 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(
-    new URL(safeNextPath(request.nextUrl.searchParams.get("next")), request.url),
+    new URL(safeInternalPath(request.nextUrl.searchParams.get("next")), request.url),
   );
 }

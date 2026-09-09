@@ -3,14 +3,18 @@
   "version": "0.1.0-alpha.1",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": "24.x"
+  },
+  "allowScripts": {
+    "unrs-resolver": false
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run test:unit && next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "node --test scripts/*.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.6",
