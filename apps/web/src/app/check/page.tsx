@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { devices, getDeviceById } from "@/lib/catalog";
+import { devices, getDeviceById, reviewedDevices } from "@/lib/catalog";
 import {
   architectures,
   connectionKinds,
@@ -89,12 +89,26 @@ export default async function CheckPage({ searchParams }: Props) {
       <section>
         <form className="config-form" action="/check" method="get">
           <label>
-            Device
-            <select name="device" defaultValue={device.id} required>
-              {devices.map((option) => (
-                <option key={option.id} value={option.id}>{option.manufacturer} {option.name}</option>
+            Device USB ID
+            <input
+              name="device"
+              list="reviewed-device-suggestions"
+              defaultValue={rawDeviceId || device.id}
+              required
+              maxLength={13}
+              pattern="usb:[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4}"
+              placeholder="usb:0403:6001"
+            />
+            <datalist id="reviewed-device-suggestions">
+              {reviewedDevices.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.manufacturer} {option.name}
+                </option>
               ))}
-            </select>
+            </datalist>
+            <span className="field-help">
+              Enter a canonical USB VID/PID or <Link href="/devices">find a device in the catalog</Link>.
+            </span>
           </label>
           <label>
             Operating system
@@ -136,7 +150,7 @@ export default async function CheckPage({ searchParams }: Props) {
             <strong>Invalid configuration.</strong>
             <p>
               {invalidFields.join(", ")} {invalidFields.length === 1 ? "is" : "are"} outside the
-              reviewed checker options. No compatibility claim was generated. Choose values from the
+              known USB identity catalog. No compatibility claim was generated. Choose values from the
               form and try again.
             </p>
           </div>

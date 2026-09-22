@@ -2,10 +2,11 @@ import Link from "next/link";
 import { devices } from "@/lib/catalog";
 import { getDeviceEvidence, observations, supportStatements } from "@/lib/evidence";
 
-const evidenceBackedDevices = devices.filter((device) => {
-  const evidence = getDeviceEvidence(device.id);
-  return evidence.supportStatements.length > 0 || evidence.observations.length > 0;
-});
+const evidenceDeviceIds = new Set([
+  ...supportStatements.map((statement) => statement.device_id),
+  ...observations.map((observation) => observation.device_id),
+]);
+const evidenceBackedDevices = devices.filter((device) => evidenceDeviceIds.has(device.id));
 
 export default function Home() {
   return (

@@ -3,13 +3,12 @@ import addFormats from "ajv-formats";
 
 import communitySubmissionSchema from "../../../../schemas/community-submission.schema.json";
 
-import { devices } from "@/lib/catalog";
+import { getDeviceById } from "@/lib/catalog";
 
 const OS_FAMILIES = new Set(["windows", "macos", "ubuntu", "linux", "unknown"]);
 const ARCHITECTURES = new Set(["x86_64", "arm64", "unknown"]);
 const CONNECTION_PATHS = new Set(["direct_port", "usb_hub", "unspecified"]);
 const OUTCOMES = new Set(["works", "works_with_conditions", "fails"]);
-const DEVICE_IDS = new Set(devices.map((device) => device.id));
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const TIMEZONE_PATTERN = /(Z|[+-]\d{2}:\d{2})$/i;
 
@@ -134,10 +133,12 @@ export type CommunitySubmission = {
 };
 
 export function parseCommunitySubmission(formData: FormData): CommunitySubmission {
-  const deviceId = text(formData, "target_device_id", 32);
-  if (!DEVICE_IDS.has(deviceId)) {
-    throw new SubmissionFormError("invalid_device", "Select a reviewed CompatForge device");
+  const requestedDeviceId = text(formData, "target_device_id", 32);
+  const device = getDeviceById(requestedDeviceId);
+  if (!device) {
+    throw new SubmissionFormError("invalid_device", "Select a known CompatForge USB identity");
   }
+  const deviceId = device.id;
 
   const handoffSha = text(formData, "handoff_sha256", 64).toLowerCase();
   if (!SHA256_PATTERN.test(handoffSha)) {

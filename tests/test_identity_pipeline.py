@@ -1,10 +1,15 @@
+import json
 from pathlib import Path
 
 import pytest
 
 pytest.importorskip("duckdb")
 
-from compatforge_pipeline.identity_pipeline import build_bronze, export_public_snapshot
+from compatforge_pipeline.identity_pipeline import (
+    build_bronze,
+    export_public_snapshot,
+    export_web_catalog,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "usb.ids"
 FIXED_RETRIEVED_AT = "2026-01-01T00:00:00Z"
@@ -74,3 +79,20 @@ def test_public_snapshot_contains_identity_only(tmp_path: Path) -> None:
     assert manifest["row_count"] == 3
     assert "compatibility" not in catalog.lower()
     assert "usb:1234:0001" in catalog
+
+    web_catalog_path = tmp_path / "web-device-catalog.json"
+    web_catalog = export_web_catalog(workspace=tmp_path, output_path=web_catalog_path)
+    payload = json.loads(web_catalog_path.read_text(encoding="utf-8"))
+
+    assert web_catalog["counts"] == {"devices": 3, "vendors": 2}
+    assert payload == web_catalog
+    assert payload["source"]["parser_version"] == "2"
+    assert payload["vendors"] == [
+        [
+            "1234",
+            "Example Instruments",
+            [["0001", "Debug Adapter"], ["0002", "Serial Bridge"]],
+        ],
+        ["ABCD", "Demo Labs", [["00FF", "Logic Analyzer"]]],
+    ]
+    assert "compatibility" not in web_catalog_path.read_text(encoding="utf-8").lower()

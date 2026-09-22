@@ -46,8 +46,8 @@ Status: **complete**.
 
 Status: **complete**.
 
-- searchable reviewed device catalog;
-- static device evidence pages;
+- searchable, paginated full USB identity catalog with a curated reviewed metadata overlay;
+- pre-rendered reviewed device pages plus on-demand identity-only device pages;
 - configuration-level compatibility checker;
 - separate observed-compatibility and vendor-support results;
 - explicit resolver-relaxation labels;

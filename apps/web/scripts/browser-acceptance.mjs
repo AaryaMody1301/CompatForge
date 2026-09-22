@@ -152,6 +152,23 @@ const cases = [
     includes: ["1 result(s)", "FTDI", "FT232R", "usb:0403:6001"],
   },
   {
+    name: "full-catalog-search",
+    pathname: "/devices?q=usb%3A2341%3A0043",
+    status: 200,
+    includes: ["Arduino SA", "Uno R3 (CDC ACM)", "usb:2341:0043"],
+  },
+  {
+    name: "full-catalog-device-detail",
+    pathname: "/devices/usb-2341-0043",
+    status: 200,
+    includes: [
+      "Arduino SA",
+      "Uno R3 (CDC ACM)",
+      "Compatibility evidence is unknown.",
+      "usb:2341:0043",
+    ],
+  },
+  {
     name: "device-detail",
     pathname: "/devices/ftdi-ft232r",
     status: 200,
@@ -180,7 +197,7 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "device is outside the reviewed checker options.",
+      "device is outside the known USB identity catalog.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],

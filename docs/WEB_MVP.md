@@ -17,7 +17,9 @@ Phase 4 turns the reviewed CompatForge evidence corpus into a read-only product 
 
 The web app imports the reviewed JSON records under `data/evidence/` directly into server-side TypeScript modules. The repository remains the source of truth; the web app does not duplicate the evidence body in a second store.
 
-The initial catalog has a small explicit device metadata list for the reviewed devices. This is intentionally simpler than introducing a second identity service before catalog scale requires one.
+The web product now consumes the complete reviewed USB identity snapshot from `data/catalog/usb-device-catalog.json`. The small `release-preview-devices.json` file remains only as a curated metadata overlay for richer aliases, categories, summaries, and stable legacy slugs.
+
+Catalog search is server-rendered and paginated. Generic identity pages are rendered on demand, while the small reviewed overlay is pre-rendered. Large device pickers use a canonical VID/PID text field with reviewed suggestions instead of rendering tens of thousands of HTML `<option>` elements.
 
 ## Rendering model
 

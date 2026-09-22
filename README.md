@@ -25,9 +25,9 @@ The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external r
 
 ## Device coverage
 
-The release-preview web catalog contains known developer-device identities separately from compatibility evidence. Identity-only devices can be searched and checked, but they return unknown compatibility until reviewed support statements or observations exist.
+The web catalog publishes the complete reviewed `usb.ids` product-identity snapshot separately from compatibility evidence. Identity-only devices can be searched, opened, checked, and used for community submissions, but they return unknown compatibility until reviewed support statements or observations exist.
 
-The current preview catalog covers FTDI FT232/FT2232/FT4232/FT232H, Silicon Labs CP210x/CP2105/CP2108, QinHeng CH340/CH341, and Saleae Logic Pro 8. The identity refresh pipeline uses the upstream USB ID Repository to prepare broader deterministic candidates for review.
+`data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/release-preview-devices.json` is now only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes generate the full candidate catalog and prepare a review pull request when the upstream snapshot changes; they never create compatibility claims or merge directly to `main`.
 
 ## Repository layout
 
@@ -35,7 +35,7 @@ The current preview catalog covers FTDI FT232/FT2232/FT4232/FT232H, Silicon Labs
 apps/web/                     Next.js web product
 pipeline/compatforge_pipeline Python identity, evidence, diagnostics, and release tooling
 dbt/compatforge/              DuckDB/dbt transformations
-data/catalog/                 reviewed web identity catalog
+data/catalog/                 full USB identity snapshot + curated metadata overlay
 data/sources/                 upstream-source contracts and vendor baselines
 data/evidence/                reviewed support statements and observations
 data/fixtures/                public synthetic contract fixtures

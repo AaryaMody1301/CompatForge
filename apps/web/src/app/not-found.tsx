@@ -5,8 +5,8 @@ export default function NotFound() {
     <main className="shell page-stack">
       <section className="compact-hero">
         <p className="eyebrow">Not found</p>
-        <h1>That evidence page does not exist.</h1>
-        <p>The public catalog only exposes reviewed devices and evidence.</p>
+        <h1>That catalog page does not exist.</h1>
+        <p>The published USB identity snapshot does not contain this device or route.</p>
         <Link className="button button-primary" href="/devices">Browse devices</Link>
       </section>
     </main>

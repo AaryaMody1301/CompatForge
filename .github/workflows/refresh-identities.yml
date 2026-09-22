@@ -1,15 +1,6 @@
 name: Refresh USB identity snapshot
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "data/catalog/**"
-      - "pipeline/compatforge_pipeline/usb_ids.py"
-      - "pipeline/compatforge_pipeline/identity_pipeline.py"
-      - "dbt/compatforge/**"
-      - ".github/workflows/refresh-identities.yml"
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -17,13 +8,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: usb-identity-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Checkout
+      - name: Checkout canonical branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -48,7 +46,13 @@ jobs:
       - name: Export public identity snapshot
         run: python -m compatforge_pipeline.identity_pipeline snapshot --workspace build/live
 
-      - name: Verify release catalog identities remain upstream
+      - name: Export web identity catalog
+        run: >-
+          python -m compatforge_pipeline.identity_pipeline web-catalog
+          --workspace build/live
+          --output data/catalog/usb-device-catalog.json
+
+      - name: Verify curated metadata identities remain upstream
         run: |
           python - <<'PY'
           import json
@@ -63,7 +67,28 @@ jobs:
           }
           missing = sorted(item["id"] for item in catalog if item["id"] not in upstream_ids)
           if missing:
-              raise SystemExit(f"release catalog identities missing upstream: {missing}")
+              raise SystemExit(f"curated catalog identities missing upstream: {missing}")
+          PY
+
+      - name: Detect published catalog drift
+        id: drift
+        shell: bash
+        run: |
+          if git diff --quiet -- data/catalog/usb-device-catalog.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Published USB identity catalog already matches the current upstream snapshot."               >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Published USB identity catalog differs from the current upstream snapshot."               >> "$GITHUB_STEP_SUMMARY"
+          fi
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("data/catalog/usb-device-catalog.json").read_text())
+          print(f"- Devices: **{payload['counts']['devices']:,}**")
+          print(f"- Vendors with product identities: **{payload['counts']['vendors']:,}**")
+          print(f"- Source SHA-256: `{payload['source']['sha256']}`")
           PY
 
       - name: Upload refresh candidate
@@ -73,4 +98,72 @@ jobs:
           path: |
             build/live/manifests/source_manifest.json
             build/live/public/
+            data/catalog/usb-device-catalog.json
           retention-days: 14
+
+      - name: Check refresh write configuration
+        if: steps.drift.outputs.changed == 'true'
+        id: config
+        env:
+          REFRESH_GITHUB_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if [ -n "$REFRESH_GITHUB_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Catalog drift was detected, but COMPATFORGE_REFRESH_GITHUB_TOKEN is not configured; candidate artifact only."               >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Render refresh pull request body
+        if: steps.drift.outputs.changed == 'true' && steps.config.outputs.ready == 'true'
+        run: |
+          mkdir -p build/identity-refresh
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          payload = json.loads(Path("data/catalog/usb-device-catalog.json").read_text())
+          body = f"""## USB identity refresh
+
+          Refresh the published web identity catalog from the reviewed upstream `usb.ids` snapshot.
+
+          - devices: **{payload['counts']['devices']:,}**
+          - vendors with product identities: **{payload['counts']['vendors']:,}**
+          - source SHA-256: `{payload['source']['sha256']}`
+          - compatibility evidence: **unchanged**
+
+          The full identity list is publication data only. It does not create support or observed-compatibility claims.
+          """
+          Path("build/identity-refresh/pr-body.md").write_text(body, encoding="utf-8")
+          PY
+
+      - name: Commit and push bot-owned refresh branch
+        if: steps.drift.outputs.changed == 'true' && steps.config.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          git config user.name "compatforge-refresh[bot]"
+          git config user.email "compatforge-refresh[bot]@users.noreply.github.com"
+          git checkout -B automation/usb-identity-refresh
+          git add data/catalog/usb-device-catalog.json
+          git commit -m "Refresh USB identity catalog"
+          gh auth setup-git
+          git push --force origin HEAD:refs/heads/automation/usb-identity-refresh
+
+      - name: Create or update review pull request
+        if: steps.drift.outputs.changed == 'true' && steps.config.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          existing_pr="$(
+            gh pr list               --head automation/usb-identity-refresh               --base main               --state open               --json number               --jq '.[0].number // empty'
+          )"
+          if [ -n "$existing_pr" ]; then
+            gh pr edit "$existing_pr"               --title "Refresh USB identity catalog"               --body-file build/identity-refresh/pr-body.md
+          else
+            gh pr create               --base main               --head automation/usb-identity-refresh               --title "Refresh USB identity catalog"               --body-file build/identity-refresh/pr-body.md
+          fi
+          echo "Prepared a review PR only; no identity refresh was merged automatically."             >> "$GITHUB_STEP_SUMMARY"

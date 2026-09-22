@@ -34,6 +34,7 @@ analytics.device_catalog
         +--> device_catalog.jsonl
         +--> device_catalog.parquet
         +--> snapshot_manifest.json
+        +--> compact web catalog candidate
 ```
 
 ## Provenance requirements
@@ -61,6 +62,8 @@ CI builds the same synthetic fixture twice from an identical retrieval timestamp
 
 Compatibility evidence enters a separate model in Phase 3.
 
+The released web product also includes `data/catalog/usb-device-catalog.json`, a compact vendor-grouped representation generated from the same identity-only snapshot. The web layer overlays the curated metadata in `release-preview-devices.json` without changing the canonical VID/PID identity or inventing compatibility state.
+
 ## Refresh policy
 
-The scheduled workflow checks the upstream USB ID Repository at most once per day and uploads a candidate artifact. It does not automatically commit or publish upstream changes. A candidate must pass parsing, dbt tests, source provenance checks, and snapshot export before it can be reviewed for release.
+The scheduled workflow checks the upstream USB ID Repository at most once per day, builds the analytical and compact web snapshots, and uploads the candidate artifacts. When the published web catalog differs, the workflow can use the existing scoped refresh credential to force-update a bot-owned refresh branch and create or update a review pull request. It never merges directly to `main`, and identity refreshes never create compatibility evidence.
