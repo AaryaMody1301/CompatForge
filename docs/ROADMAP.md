@@ -1,4 +1,6 @@
-# Roadmap
+# Implementation roadmap
+
+> Historical implementation record. All planned phases below are complete or operationally gated as noted. Use [`docs/README.md`](README.md) for current architecture and operating documentation.
 
 ## Phase 1 - Foundation and data contracts
 

@@ -10,7 +10,7 @@ const evidenceDeviceIds = new Set([
   ...observations.map((observation) => observation.device_id),
 ]);
 const indexableDevices = devices.filter(
-  (device) => device.reviewed_metadata || evidenceDeviceIds.has(device.id),
+  (device) => device.curated_metadata || evidenceDeviceIds.has(device.id),
 );
 
 function latestDate(values: string[]) {
@@ -65,7 +65,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${SITE_URL}/devices/${device.slug}`,
       lastModified: deviceLastModified(device.id),
       changeFrequency: "monthly" as const,
-      priority: device.reviewed_metadata ? 0.7 : 0.4,
+      priority: device.curated_metadata ? 0.7 : 0.4,
     })),
   ];
 }

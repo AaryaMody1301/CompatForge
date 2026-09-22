@@ -58,14 +58,14 @@ jobs:
           import json
           from pathlib import Path
 
-          catalog = json.loads(Path("data/catalog/release-preview-devices.json").read_text())
+          curated = json.loads(Path("data/catalog/curated-devices.json").read_text())
           snapshot = Path("build/live/public/device_catalog.jsonl")
           upstream_ids = {
               json.loads(line)["device_id"]
               for line in snapshot.read_text(encoding="utf-8").splitlines()
               if line
           }
-          missing = sorted(item["id"] for item in catalog if item["id"] not in upstream_ids)
+          missing = sorted(item["id"] for item in curated if item["id"] not in upstream_ids)
           if missing:
               raise SystemExit(f"curated catalog identities missing upstream: {missing}")
           PY

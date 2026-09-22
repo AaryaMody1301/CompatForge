@@ -1,6 +1,6 @@
 # Browser acceptance
 
-Phase 8A adds a real-browser release gate for the public CompatForge surface without introducing a new JavaScript testing dependency. Phase 8B extends the same contract with deployed security-header assertions.
+The browser-acceptance gate exercises the public CompatForge surface without introducing a browser-testing JavaScript dependency. The same contract also verifies deployed security headers.
 
 ## Why Chrome CLI
 
@@ -22,7 +22,7 @@ The gate therefore tests the production Next.js build in a browser while leaving
 
 For every case the runner verifies the expected HTTP status, renders the page in headless Chrome, requires an application `<main>`, checks reviewed content markers, and rejects generic application/runtime error markers.
 
-Phase 8B additionally requires every case to return the configured CSP, Permissions Policy, Referrer Policy, HSTS, `X-Content-Type-Options`, and `X-Frame-Options` headers. It also fails if `X-Powered-By` is exposed. The exact policy is documented in `docs/SECURITY_HARDENING.md`.
+Every reviewed route must also return the configured CSP, Permissions Policy, Referrer Policy, HSTS, `X-Content-Type-Options`, and `X-Frame-Options` headers. The gate fails if `X-Powered-By` is exposed. The exact policy is documented in `docs/SECURITY_HARDENING.md`.
 
 The default CI contract expects community submissions to be intentionally disabled unless a deployment explicitly enables the feature with its hosted authentication and moderation configuration. It does not attempt OAuth in CI.
 
@@ -78,4 +78,4 @@ Set `CHROME_BIN` if Chrome or Chromium is not available under one of the default
 
 ## Boundary
 
-The browser gate is public and unauthenticated. Hosted GitHub OAuth/Supabase moderation acceptance remains a separate configured-environment test. Phase 8B adds supply-chain and response-security enforcement; immutable data release manifests and broader release attestations belong to Phase 8C, while repository-setting/release immutability acceptance belongs to Phase 8D.
+The browser gate is public and unauthenticated. Hosted GitHub OAuth/Supabase moderation acceptance remains a separate configured-environment test. Supply-chain checks, immutable release manifests, attestations, and repository-setting acceptance remain separate release gates.

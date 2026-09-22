@@ -5,14 +5,14 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).parents[1]
-PREVIEW_PATH = ROOT / "data" / "catalog" / "release-preview-devices.json"
+CURATED_PATH = ROOT / "data" / "catalog" / "curated-devices.json"
 PUBLISHED_PATH = ROOT / "data" / "catalog" / "usb-device-catalog.json"
 USB_ID = re.compile(r"^usb:[0-9A-F]{4}:[0-9A-F]{4}$")
 HEX4 = re.compile(r"^[0-9A-F]{4}$")
 
 
-def _preview() -> list[dict]:
-    payload = json.loads(PREVIEW_PATH.read_text(encoding="utf-8"))
+def _curated() -> list[dict]:
+    payload = json.loads(CURATED_PATH.read_text(encoding="utf-8"))
     assert isinstance(payload, list)
     return payload
 
@@ -61,8 +61,8 @@ def test_published_usb_catalog_is_broad_canonical_and_provenanced() -> None:
         assert all(product_name.strip() for _product_id, product_name in products)
 
 
-def test_release_preview_metadata_is_unique_canonical_and_published() -> None:
-    catalog = _preview()
+def test_curated_metadata_is_unique_canonical_and_published() -> None:
+    catalog = _curated()
     ids = [item["id"] for item in catalog]
     slugs = [item["slug"] for item in catalog]
     published_ids = _published_ids(_published())
@@ -76,8 +76,7 @@ def test_release_preview_metadata_is_unique_canonical_and_published() -> None:
     assert set(ids) <= published_ids
 
 
-def test_every_reviewed_evidence_device_exists_in_preview_and_full_catalog() -> None:
-    preview_ids = {item["id"] for item in _preview()}
+def test_every_reviewed_evidence_device_exists_in_full_catalog() -> None:
     published_ids = _published_ids(_published())
     evidence_paths = [
         *sorted((ROOT / "data" / "evidence" / "observations").glob("*.json")),
@@ -87,5 +86,4 @@ def test_every_reviewed_evidence_device_exists_in_preview_and_full_catalog() -> 
         json.loads(path.read_text(encoding="utf-8"))["device_id"] for path in evidence_paths
     }
 
-    assert evidence_ids <= preview_ids
     assert evidence_ids <= published_ids

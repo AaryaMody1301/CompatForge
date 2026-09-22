@@ -2,7 +2,7 @@
 
 ## Boundary
 
-The Phase 2 data platform answers **what hardware identity is this?** It does not answer whether the hardware works with a host. USB registry data can never create a `WORKS`, `FAILS`, `CONFLICTING`, or `UNKNOWN` compatibility result.
+The hardware identity data platform answers **what hardware identity is this?** It does not answer whether the hardware works with a host. USB registry data can never create a `WORKS`, `FAILS`, `CONFLICTING`, or `UNKNOWN` compatibility result.
 
 ## Pipeline
 
@@ -60,9 +60,9 @@ CI builds the same synthetic fixture twice from an identical retrieval timestamp
 - `identity_source`;
 - `source_sha256`.
 
-Compatibility evidence enters a separate model in Phase 3.
+Compatibility evidence is modeled separately from hardware identity.
 
-The released web product also includes `data/catalog/usb-device-catalog.json`, a compact vendor-grouped representation generated from the same identity-only snapshot. The web layer overlays the curated metadata in `release-preview-devices.json` without changing the canonical VID/PID identity or inventing compatibility state.
+The released web product also includes `data/catalog/usb-device-catalog.json`, a compact vendor-grouped representation generated from the same identity-only snapshot. The web layer overlays the curated metadata in `curated-devices.json` without changing the canonical VID/PID identity or inventing compatibility state.
 
 ## Refresh policy
 

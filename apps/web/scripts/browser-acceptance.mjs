@@ -286,7 +286,7 @@ const cases = [
   },
   {
     name: "custom-not-found",
-    pathname: "/devices/not-a-reviewed-device",
+    pathname: "/devices/not-a-catalog-device",
     status: 404,
     includes: ["That page does not exist.", "Browse devices"],
   },
