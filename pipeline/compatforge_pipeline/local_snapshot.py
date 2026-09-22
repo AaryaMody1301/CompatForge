@@ -82,7 +82,7 @@ def _project_support(record: dict[str, Any]) -> dict[str, Any]:
         },
         "limitations": sorted(set(record.get("limitations", []))),
     }
-    for field in ("driver", "software"):
+    for field in ("driver", "software", "release_channel"):
         if field in record:
             projected[field] = record[field]
     return projected

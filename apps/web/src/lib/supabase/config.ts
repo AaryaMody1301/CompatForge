@@ -3,7 +3,9 @@ export type SupabaseConfig = {
   publishableKey: string;
 };
 
-export function getSupabaseConfig(): SupabaseConfig | null {
+export type CommunityFeatureState = "disabled" | "misconfigured" | "ready";
+
+function rawSupabaseConfig(): SupabaseConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
 
@@ -18,4 +20,15 @@ export function getSupabaseConfig(): SupabaseConfig | null {
   }
 
   return { url, publishableKey };
+}
+
+export function getCommunityFeatureState(): CommunityFeatureState {
+  if (process.env.COMPATFORGE_COMMUNITY_ENABLED?.trim() !== "1") {
+    return "disabled";
+  }
+  return rawSupabaseConfig() ? "ready" : "misconfigured";
+}
+
+export function getSupabaseConfig(): SupabaseConfig | null {
+  return getCommunityFeatureState() === "ready" ? rawSupabaseConfig() : null;
 }

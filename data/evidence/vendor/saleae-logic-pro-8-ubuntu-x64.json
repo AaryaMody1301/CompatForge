@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_support_statement",
+  "statement_id": "sup_saleae_lp8_ubuntu_x64",
+  "device_id": "usb:21A9:1005",
+  "scope": {
+    "architecture": "x86_64",
+    "operating_system": {
+      "family": "ubuntu",
+      "version_mode": "minimum",
+      "minimum_version": "20.04"
+    },
+    "connection": {
+      "kind": "any_usb",
+      "minimum_usb_generation": "2.0"
+    }
+  },
+  "software": {
+    "name": "Saleae Logic 2"
+  },
+  "support_status": "supported_with_conditions",
+  "release_channel": "stable",
+  "conditions": [
+    "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance.",
+    "Saleae documents additional AppImage/AppArmor setup considerations on Ubuntu 24.04."
+  ],
+  "evidence": {
+    "source_type": "vendor_documentation",
+    "sources": [
+      {
+        "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/supported-operating-systems",
+        "source_title": "Supported Operating Systems | Saleae"
+      },
+      {
+        "source_url": "https://www.saleae.com/support/logic-software/download-and-installation/sw-installation",
+        "source_title": "Installation | Saleae"
+      }
+    ],
+    "source_note": "Saleae's current stable support matrix lists Ubuntu 20.04+ 64-bit, and its installation guidance documents the current Ubuntu AppImage setup path including Ubuntu 24.04 considerations."
+  },
+  "reviewed_at": "2026-09-22T06:00:00Z",
+  "recorded_at": "2026-09-22T06:00:00Z",
+  "limitations": [
+    "This is vendor support documentation, not an exact host-level reproduction."
+  ]
+}

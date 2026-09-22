@@ -9,6 +9,8 @@ type PublishedCatalog = {
     license: string;
     name: string;
     parser_version: string;
+    version: string | null;
+    snapshot_date: string | null;
     sha256: string;
     source_url: string;
   };
@@ -44,6 +46,15 @@ function canonicalSlug(deviceId: string) {
 
 function registryUrl(vendorId: string, productId: string) {
   return `https://usb-ids.gowdy.us/read/UD/${vendorId.toLocaleLowerCase("en")}/${productId.toLocaleLowerCase("en")}`;
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFKD")
+    .toLocaleLowerCase("en")
+    .replace(/[^a-z0-9:]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 export function normalizeDeviceId(value: string) {
@@ -98,4 +109,63 @@ export function getDeviceBySlug(slug: string) {
 
 export function isKnownDeviceId(id: string) {
   return getDeviceById(id) !== undefined;
+}
+
+export function compareDeviceNames(left: Device, right: Device) {
+  return (
+    left.manufacturer.localeCompare(right.manufacturer, "en", { sensitivity: "base" }) ||
+    left.name.localeCompare(right.name, "en", { sensitivity: "base" }) ||
+    left.id.localeCompare(right.id, "en")
+  );
+}
+
+export function deviceSearchScore(device: Device, query: string) {
+  const normalizedQuery = normalizeSearch(query);
+  if (!normalizedQuery) return 0;
+
+  const normalizedId = normalizeSearch(device.id);
+  const normalizedName = normalizeSearch(device.name);
+  const normalizedManufacturer = normalizeSearch(device.manufacturer);
+  const normalizedAliases = device.aliases.map(normalizeSearch);
+  const searchable = [
+    normalizedManufacturer,
+    normalizedName,
+    normalizedId,
+    ...normalizedAliases,
+  ].join(" ");
+
+  if (normalizedId === normalizedQuery) return 10_000;
+  if (normalizedAliases.includes(normalizedQuery)) return 9_000;
+  if (normalizedName === normalizedQuery) return 8_500;
+
+  const tokens = normalizedQuery.split(" ").filter(Boolean);
+  if (!tokens.every((token) => searchable.includes(token))) return null;
+
+  let score = tokens.length * 30;
+  if (searchable.includes(normalizedQuery)) score += 180;
+  if (normalizedName.startsWith(normalizedQuery)) score += 220;
+  if (normalizedManufacturer.startsWith(normalizedQuery)) score += 260;
+  if (tokens[0] && normalizedManufacturer.startsWith(tokens[0])) score += 700;
+  if (normalizedAliases.some((alias) => alias.startsWith(normalizedQuery))) score += 240;
+  if (device.reviewed_metadata) score += 40;
+  return score;
+}
+
+export function searchDevices(query: string) {
+  const normalized = query.trim();
+  if (!normalized) return [...devices];
+
+  return devices
+    .map((device) => ({ device, score: deviceSearchScore(device, normalized) }))
+    .filter(
+      (item): item is { device: Device; score: number } =>
+        item.score !== null,
+    )
+    .sort(
+      (left, right) =>
+        right.score - left.score ||
+        Number(right.device.reviewed_metadata) - Number(left.device.reviewed_metadata) ||
+        compareDeviceNames(left.device, right.device),
+    )
+    .map((item) => item.device);
 }

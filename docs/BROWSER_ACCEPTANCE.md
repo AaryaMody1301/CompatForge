@@ -12,19 +12,19 @@ The gate therefore tests the production Next.js build in a browser while leaving
 
 `apps/web/scripts/browser-acceptance.mjs` checks these reviewed surfaces:
 
-1. home page and primary calls to action;
-2. device-catalog search for FT232R;
-3. FT232R evidence detail page;
-4. a complete Windows 11 ARM64 compatibility-checker query;
-5. coverage page;
-6. unauthenticated community-submission entry point;
-7. the custom reviewed-device 404 boundary.
+1. home page, formatted corpus counts, canonical/social metadata, and primary calls to action;
+2. default catalog ordering plus exact-ID and natural-language device search;
+3. generic identity pages and reviewed evidence detail pages;
+4. reviewed FTDI and Saleae checker queries across stable and Insider support channels;
+5. invalid checker inputs, coverage, and the global 404 boundary;
+6. the intentional read-only community state used when hosted submissions are disabled;
+7. public discovery assets including robots, sitemap, web manifest, icons, and social images.
 
 For every case the runner verifies the expected HTTP status, renders the page in headless Chrome, requires an application `<main>`, checks reviewed content markers, and rejects generic application/runtime error markers.
 
 Phase 8B additionally requires every case to return the configured CSP, Permissions Policy, Referrer Policy, HSTS, `X-Content-Type-Options`, and `X-Frame-Options` headers. It also fails if `X-Powered-By` is exposed. The exact policy is documented in `docs/SECURITY_HARDENING.md`.
 
-The community-submission case accepts either safe unauthenticated state: hosted authentication configured but no signed-in user, or authentication intentionally unconfigured. It does not attempt OAuth in CI.
+The default CI contract expects community submissions to be intentionally disabled unless a deployment explicitly enables the feature with its hosted authentication and moderation configuration. It does not attempt OAuth in CI.
 
 ## Visual artifacts
 

@@ -143,6 +143,21 @@ const cases = [
       "Will this hardware actually work?",
       "Evidence-first compatibility",
       "Browse devices",
+      "20,537",
+      "property=\"og:title\"",
+      "name=\"twitter:card\"",
+      "rel=\"canonical\"",
+    ],
+  },
+  {
+    name: "catalog-default-order",
+    pathname: "/devices",
+    status: 200,
+    includes: [
+      "Evidence-backed and curated developer hardware is shown first",
+      "FTDI FT232 USB-Serial (UART) IC",
+      "Saleae Logic Pro 8",
+      "usb.ids 2026.06.26",
     ],
   },
   {
@@ -150,6 +165,13 @@ const cases = [
     pathname: "/devices?q=FT232R",
     status: 200,
     includes: ["result(s)", "FTDI", "FT232R", "usb:0403:6001"],
+  },
+  {
+    name: "natural-device-search",
+    pathname: "/devices?q=Arduino%20Uno",
+    status: 200,
+    includes: ["Arduino SA", "Uno R3 (CDC ACM)", "dog hunter AG", "Arduino Uno Rev3"],
+    orderedText: [["Arduino SA", "dog hunter AG"]],
   },
   {
     name: "full-catalog-search",
@@ -187,8 +209,35 @@ const cases = [
       "Observed compatibility",
       "Vendor support",
       "supported with conditions",
+      "stable channel",
       "Related observation exists, but it does not match this query.",
     ],
+  },
+  {
+    name: "checker-ftdi-windows-x64",
+    pathname:
+      "/check?device=usb%3A0403%3A6001&os=windows&version=11&architecture=x86_64&connection=direct_port",
+    status: 200,
+    includes: ["Vendor support", "supported", "stable channel", "2.12.36.20"],
+  },
+  {
+    name: "checker-saleae-ubuntu-x64",
+    pathname:
+      "/check?device=usb%3A21A9%3A1005&os=ubuntu&version=24.04&architecture=x86_64&connection=direct_port",
+    status: 200,
+    includes: [
+      "Saleae Logic Pro 8",
+      "supported with conditions",
+      "stable channel",
+      "Ubuntu 24.04",
+    ],
+  },
+  {
+    name: "checker-saleae-ubuntu-arm64",
+    pathname:
+      "/check?device=usb%3A21A9%3A1005&os=ubuntu&version=24.04&architecture=arm64&connection=direct_port",
+    status: 200,
+    includes: ["Saleae Logic Pro 8", "supported with conditions", "insider channel"],
   },
   {
     name: "checker-invalid-device",
@@ -222,25 +271,24 @@ const cases = [
       "See what the corpus can—and cannot—answer.",
       "Coverage is not confidence.",
       "Latest evidence",
+      "<span>observation</span>",
     ],
   },
   {
-    name: "submissions-unauthenticated",
+    name: "submissions-disabled",
     pathname: "/submissions",
     status: 200,
-    includes: ["Reproductions enter a review queue, not the evidence corpus."],
-    includesAny: [
-      [
-        "Community auth is not configured",
-        "Use GitHub only to establish a Supabase user identity.",
-      ],
+    includes: [
+      "Reproductions enter a review queue, not the evidence corpus.",
+      "Community submissions are disabled on this deployment.",
     ],
+    excludes: ["Sign in with GitHub"],
   },
   {
     name: "custom-not-found",
     pathname: "/devices/not-a-reviewed-device",
     status: 404,
-    includes: ["That catalog page does not exist.", "Browse devices"],
+    includes: ["That page does not exist.", "Browse devices"],
   },
 ];
 
@@ -283,6 +331,18 @@ try {
         );
       }
     }
+    for (const sequence of testCase.orderedText ?? []) {
+      let cursor = -1;
+      for (const expected of sequence) {
+        const index = assertedHtml.indexOf(expected, cursor + 1);
+        if (index < 0) {
+          throw new Error(
+            `${testCase.name}: browser DOM did not contain ordered marker ${JSON.stringify(expected)}`,
+          );
+        }
+        cursor = index;
+      }
+    }
     if (
       assertedHtml.includes("Application error") ||
       assertedHtml.includes("Internal Server Error")
@@ -297,10 +357,39 @@ try {
       required_text: testCase.includes,
       forbidden_text: testCase.excludes ?? [],
       alternative_text_groups: testCase.includesAny ?? [],
+      ordered_text_groups: testCase.orderedText ?? [],
       security_headers: securityHeaders,
       deployment_commit: deploymentCommit,
       dom_bytes: Buffer.byteLength(html),
     });
+  }
+
+  const metadataRoutes = [
+    { name: "robots", pathname: "/robots.txt", contentType: "text/plain", includes: ["Sitemap:"] },
+    { name: "sitemap", pathname: "/sitemap.xml", contentType: "application/xml", includes: ["/devices/ftdi-ft232r"] },
+    { name: "manifest", pathname: "/manifest.webmanifest", contentType: "application/manifest+json", includes: ["CompatForge"] },
+    { name: "favicon", pathname: "/favicon.ico", contentType: "image/x-icon", includes: [] },
+    { name: "icon", pathname: "/icon.svg", contentType: "image/svg+xml", includes: [] },
+    { name: "open-graph-image", pathname: "/opengraph-image", contentType: "image/png", includes: [] },
+    { name: "twitter-image", pathname: "/twitter-image", contentType: "image/png", includes: [] },
+  ];
+  for (const route of metadataRoutes) {
+    const response = await fetch(`${baseUrl}${route.pathname}`, { redirect: "manual" });
+    if (response.status !== 200) {
+      throw new Error(`${route.name}: expected HTTP 200, received ${response.status}`);
+    }
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes(route.contentType)) {
+      throw new Error(
+        `${route.name}: expected content type containing ${route.contentType}, received ${contentType}`,
+      );
+    }
+    const body = route.includes.length ? await response.text() : "";
+    for (const expected of route.includes) {
+      if (!body.includes(expected)) {
+        throw new Error(`${route.name}: response did not contain ${JSON.stringify(expected)}`);
+      }
+    }
   }
 
   screenshot("home-desktop", `${baseUrl}/`, 1440, 1000);
@@ -316,7 +405,7 @@ try {
 }
 
 const report = {
-  report_version: 4,
+  report_version: 5,
   base_url: baseUrl,
   browser: versionProbe.stdout.trim(),
   expected_commit: expectedCommit,

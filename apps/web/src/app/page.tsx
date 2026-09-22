@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { devices } from "@/lib/catalog";
 import { getDeviceEvidence, observations, supportStatements } from "@/lib/evidence";
+import { countLabel } from "@/lib/site";
 
 const evidenceDeviceIds = new Set([
   ...supportStatements.map((statement) => statement.device_id),
@@ -28,16 +29,16 @@ export default function Home() {
         </div>
         <div className="metrics" aria-label="Current evidence corpus">
           <div>
-            <strong>{devices.length}</strong>
+            <strong>{devices.length.toLocaleString("en")}</strong>
             <span>known identities</span>
           </div>
           <div>
-            <strong>{supportStatements.length}</strong>
-            <span>support statements</span>
+            <strong>{supportStatements.length.toLocaleString("en")}</strong>
+            <span>{supportStatements.length === 1 ? "support statement" : "support statements"}</span>
           </div>
           <div>
-            <strong>{observations.length}</strong>
-            <span>observations</span>
+            <strong>{observations.length.toLocaleString("en")}</strong>
+            <span>{observations.length === 1 ? "observation" : "observations"}</span>
           </div>
         </div>
       </section>
@@ -59,7 +60,8 @@ export default function Home() {
                 <h3>{device.manufacturer} {device.name}</h3>
                 <p>{device.summary}</p>
                 <p className="meta">
-                  {evidence.supportStatements.length} support statement(s) · {evidence.observations.length} observation(s)
+                  {countLabel(evidence.supportStatements.length, "support statement")} ·{" "}
+                  {countLabel(evidence.observations.length, "observation")}
                 </p>
                 <Link href={`/devices/${device.slug}`}>Inspect evidence →</Link>
               </article>

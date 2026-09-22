@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Methodology" };
+import { pageMetadata } from "@/lib/site";
+
+export const metadata: Metadata = pageMetadata(
+  "Methodology",
+  "How CompatForge keeps USB identity, vendor support, observed compatibility, conflicts, and unknown states separate.",
+  "/methodology",
+);
 
 export default function MethodologyPage() {
   return (
@@ -18,7 +24,8 @@ export default function MethodologyPage() {
         <h2>1. Vendor support is not an observation.</h2>
         <p>
           A support statement records what a vendor documents for an operating system, architecture,
-          driver, software release, or USB requirement. It can return supported without creating a
+          driver, software release, release channel, or USB requirement. Stable, Insider, preview,
+          and other channels remain explicit. Vendor support can return supported without creating a
           works observation.
         </p>
 

@@ -17,7 +17,7 @@ def test_packaged_snapshot_matches_reviewed_evidence() -> None:
     packaged = load_packaged_snapshot()
     assert packaged == expected
     assert packaged["observation_count"] == 1
-    assert packaged["support_statement_count"] == 5
+    assert packaged["support_statement_count"] == 11
     assert len(snapshot_sha256(packaged)) == 64
 
 

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { devices, getDeviceById, reviewedDevices } from "@/lib/catalog";
+import { devices, getDeviceById } from "@/lib/catalog";
 import {
   architectures,
   connectionKinds,
   formatArchitecture,
   formatConnection,
   formatOsFamily,
+  formatReleaseChannel,
   getDeviceEvidence,
   osFamilies,
   resolveCompatibility,
@@ -14,8 +15,13 @@ import {
   type ConnectionKind,
   type OsFamily,
 } from "@/lib/evidence";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Check compatibility" };
+export const metadata: Metadata = pageMetadata(
+  "Check compatibility",
+  "Check a USB device configuration against reviewed vendor support and observed compatibility evidence.",
+  "/check",
+);
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type Props = { searchParams: Promise<SearchParams> };
@@ -43,8 +49,9 @@ export default async function CheckPage({ searchParams }: Props) {
     ? member(connectionKinds, rawConnectionKind)
     : null;
 
-  const device = requestedDevice ?? devices[0];
-  const architecture = (requestedArchitecture ?? "arm64") as Architecture;
+  const defaultDevice = getDeviceById("usb:0403:6001") ?? devices[0];
+  const device = requestedDevice ?? defaultDevice;
+  const architecture = (requestedArchitecture ?? "x86_64") as Architecture;
   const osFamily = (requestedOsFamily ?? "windows") as OsFamily;
   const connectionKind = (requestedConnectionKind ?? "direct_port") as ConnectionKind;
   const osVersion = rawOsVersion || "11";
@@ -92,22 +99,15 @@ export default async function CheckPage({ searchParams }: Props) {
             Device USB ID
             <input
               name="device"
-              list="reviewed-device-suggestions"
               defaultValue={rawDeviceId || device.id}
               required
               maxLength={13}
               pattern="usb:[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4}"
               placeholder="usb:0403:6001"
             />
-            <datalist id="reviewed-device-suggestions">
-              {reviewedDevices.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.manufacturer} {option.name}
-                </option>
-              ))}
-            </datalist>
             <span className="field-help">
-              Enter a canonical USB VID/PID or <Link href="/devices">find a device in the catalog</Link>.
+              Enter a canonical USB VID/PID. <Link href="/devices">Search the catalog</Link> to find
+              the device and open its prefilled checker link.
             </span>
           </label>
           <label>
@@ -206,7 +206,14 @@ export default async function CheckPage({ searchParams }: Props) {
             {result.supportStatements.map((statement) => (
               <article className="evidence-card" key={statement.statement_id}>
                 <h3>Matched support statement</h3>
+                <p className="meta">{formatReleaseChannel(statement.release_channel)}</p>
                 <p>{statement.evidence.source_note}</p>
+                {statement.limitations?.length ? (
+                  <div className="notice compact-notice">
+                    <strong>Scope limitations</strong>
+                    <ul>{statement.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul>
+                  </div>
+                ) : null}
                 <div className="sources">
                   {statement.evidence.sources.map((source) => <a href={source.source_url} key={source.source_url} rel="noreferrer" target="_blank">{source.source_title} ↗</a>)}
                 </div>

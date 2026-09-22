@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "record_type": "compatibility_support_statement",
+  "device_id": "usb:0403:6001",
+  "release_channel": "stable",
+  "reviewed_at": "2026-09-22T06:00:00Z",
+  "recorded_at": "2026-09-22T06:00:00Z",
+  "statement_id": "sup_ftdi_ft232r_macos_arm64",
+  "scope": {
+    "architecture": "arm64",
+    "operating_system": {
+      "family": "macos",
+      "version_mode": "one_of",
+      "versions": [
+        "11",
+        "12",
+        "15",
+        "26"
+      ]
+    },
+    "connection": {
+      "kind": "any_usb"
+    }
+  },
+  "driver": {
+    "name": "FTDI VCP",
+    "version": "1.6.0"
+  },
+  "support_status": "supported_with_conditions",
+  "conditions": [
+    "FTDI currently lists macOS 11, 12, 15, and 26 for the 1.6.0 VCP package; versions not explicitly listed by the vendor remain outside this statement."
+  ],
+  "evidence": {
+    "source_type": "vendor_documentation",
+    "sources": [
+      {
+        "source_url": "https://ftdichip.com/drivers/vcp-drivers/",
+        "source_title": "VCP Drivers | FTDI"
+      }
+    ],
+    "source_note": "FTDI's current VCP matrix lists driver 1.6.0 for ARM on the macOS releases explicitly named in the matrix."
+  },
+  "limitations": [
+    "Vendor support documentation is not an exact host-level reproduction."
+  ]
+}

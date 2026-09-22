@@ -12,6 +12,7 @@ select
     driver_version,
     software_name,
     software_version,
+    release_channel,
     support_status,
     conditions_json,
     evidence_source_type,

@@ -83,6 +83,7 @@
       }
     },
     "support_status": {"enum": ["supported", "supported_with_conditions", "unsupported"]},
+    "release_channel": {"enum": ["stable", "insider", "preview", "experimental", "legacy"]},
     "conditions": {
       "type": "array",
       "maxItems": 20,

@@ -7,7 +7,7 @@ Phase 4 turns the reviewed CompatForge evidence corpus into a read-only product 
 ```text
 /                       product overview and corpus counts
 /check                  configuration-level compatibility checker
-/devices                searchable reviewed catalog
+/devices                searchable published USB identity catalog
 /devices/[slug]         support statements, observations, sources, timeline
 /coverage               evidence-presence coverage by device
 /methodology            resolver and evidence rules
@@ -17,9 +17,9 @@ Phase 4 turns the reviewed CompatForge evidence corpus into a read-only product 
 
 The web app imports the reviewed JSON records under `data/evidence/` directly into server-side TypeScript modules. The repository remains the source of truth; the web app does not duplicate the evidence body in a second store.
 
-The web product now consumes the complete reviewed USB identity snapshot from `data/catalog/usb-device-catalog.json`. The small `release-preview-devices.json` file remains only as a curated metadata overlay for richer aliases, categories, summaries, and stable legacy slugs.
+The web product consumes the complete versioned USB ID Repository snapshot from `data/catalog/usb-device-catalog.json`. The small `release-preview-devices.json` file remains only as a curated CompatForge metadata overlay for richer aliases, categories, summaries, and stable legacy slugs.
 
-Catalog search is server-rendered and paginated. Generic identity pages are rendered on demand, while the small reviewed overlay is pre-rendered. Large device pickers use a canonical VID/PID text field with reviewed suggestions instead of rendering tens of thousands of HTML `<option>` elements.
+Catalog search is server-rendered, token-ranked, and paginated. Evidence-backed and curated developer hardware is presented before the raw registry on the default browse page. Generic identity pages are rendered on demand, while the small curated overlay is pre-rendered. Checker and submission forms use canonical VID/PID fields linked to the searchable catalog instead of rendering tens of thousands of HTML `<option>` elements.
 
 ## Rendering model
 

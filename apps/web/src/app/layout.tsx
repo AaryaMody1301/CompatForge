@@ -1,17 +1,38 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { getCommunityFeatureState } from "@/lib/supabase/config";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "CompatForge | Evidence-first hardware compatibility",
-    template: "%s | CompatForge",
+    default: `${SITE_NAME} | Evidence-first hardware compatibility`,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "Check developer-hardware compatibility against explicit vendor support and configuration evidence.",
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | Evidence-first hardware compatibility`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: SITE_NAME }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | Evidence-first hardware compatibility`,
+    description: SITE_DESCRIPTION,
+    images: ["/twitter-image"],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const communityReady = getCommunityFeatureState() === "ready";
+
   return (
     <html lang="en">
       <body>
@@ -24,7 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/check">Check</Link>
               <Link href="/devices">Devices</Link>
               <Link href="/coverage">Coverage</Link>
-              <Link href="/submissions">Contribute</Link>
+              {communityReady ? <Link href="/submissions">Contribute</Link> : null}
               <Link href="/methodology">Methodology</Link>
             </nav>
           </div>
