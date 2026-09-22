@@ -24,6 +24,7 @@ from compatforge_pipeline.usb_ids import (
 
 MANIFEST_VERSION = 1
 SNAPSHOT_SCHEMA_VERSION = 1
+WEB_CATALOG_SCHEMA_VERSION = 1
 
 
 def _utc_now() -> str:
@@ -211,6 +212,63 @@ def export_public_snapshot(*, workspace: Path) -> dict[str, Any]:
     return snapshot
 
 
+def export_web_catalog(*, workspace: Path, output_path: Path) -> dict[str, Any]:
+    """Export the full USB identity snapshot in a compact web-serving format."""
+    workspace = workspace.resolve()
+    source_manifest = json.loads(
+        (workspace / "manifests" / "source_manifest.json").read_text(encoding="utf-8")
+    )
+    snapshot_path = workspace / "public" / "device_catalog.jsonl"
+    rows = [
+        json.loads(line)
+        for line in snapshot_path.read_text(encoding="utf-8").splitlines()
+        if line
+    ]
+
+    grouped: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        vendor_id = str(row["vendor_id"]).upper()
+        product_id = str(row["product_id"]).upper()
+        group = grouped.setdefault(
+            vendor_id,
+            {"vendor_name": str(row["vendor_name"]), "products": []},
+        )
+        if group["vendor_name"] != str(row["vendor_name"]):
+            raise ValueError(f"USB vendor name changed within snapshot for {vendor_id}")
+        group["products"].append([product_id, str(row["product_name"])])
+
+    vendors = [
+        [
+            vendor_id,
+            group["vendor_name"],
+            sorted(group["products"], key=lambda item: item[0]),
+        ]
+        for vendor_id, group in sorted(grouped.items())
+    ]
+    source = source_manifest["source"]
+    payload = {
+        "counts": {"devices": len(rows), "vendors": len(vendors)},
+        "schema_version": WEB_CATALOG_SCHEMA_VERSION,
+        "source": {
+            "homepage": source["homepage"],
+            "license": source["license"],
+            "name": source["name"],
+            "parser_version": source["parser_version"],
+            "sha256": source["sha256"],
+            "source_url": source["source_url"],
+        },
+        "vendors": vendors,
+    }
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    return payload
+
+
 def verify_snapshots(first: Path, second: Path) -> None:
     """Fail when two snapshot manifests do not describe identical outputs."""
     first_payload = json.loads(first.read_text(encoding="utf-8"))
@@ -232,6 +290,13 @@ def _parser() -> argparse.ArgumentParser:
     snapshot = subparsers.add_parser("snapshot", help="Export the dbt-built public catalog")
     snapshot.add_argument("--workspace", type=Path, required=True)
 
+    web_catalog = subparsers.add_parser(
+        "web-catalog",
+        help="Export a compact full USB identity catalog for the web product",
+    )
+    web_catalog.add_argument("--workspace", type=Path, required=True)
+    web_catalog.add_argument("--output", type=Path, required=True)
+
     verify = subparsers.add_parser("verify", help="Compare two snapshot manifests")
     verify.add_argument("first", type=Path)
     verify.add_argument("second", type=Path)
@@ -250,6 +315,9 @@ def main() -> int:
         return 0
     if args.command == "snapshot":
         export_public_snapshot(workspace=args.workspace)
+        return 0
+    if args.command == "web-catalog":
+        export_web_catalog(workspace=args.workspace, output_path=args.output)
         return 0
     if args.command == "verify":
         verify_snapshots(args.first, args.second)

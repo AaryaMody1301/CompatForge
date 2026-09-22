@@ -149,7 +149,24 @@ const cases = [
     name: "device-search",
     pathname: "/devices?q=FT232R",
     status: 200,
-    includes: ["1 result(s)", "FTDI", "FT232R", "usb:0403:6001"],
+    includes: ["result(s)", "FTDI", "FT232R", "usb:0403:6001"],
+  },
+  {
+    name: "full-catalog-search",
+    pathname: "/devices?q=usb%3A2341%3A0043",
+    status: 200,
+    includes: ["Arduino SA", "Uno R3 (CDC ACM)", "usb:2341:0043"],
+  },
+  {
+    name: "full-catalog-device-detail",
+    pathname: "/devices/usb-2341-0043",
+    status: 200,
+    includes: [
+      "Arduino SA",
+      "Uno R3 (CDC ACM)",
+      "Compatibility evidence is unknown.",
+      "usb:2341:0043",
+    ],
   },
   {
     name: "device-detail",
@@ -180,7 +197,7 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "device is outside the reviewed checker options.",
+      "device is outside the known USB identity catalog.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
@@ -192,7 +209,7 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "architecture is outside the reviewed checker options.",
+      "architecture is outside the available checker options.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
@@ -223,7 +240,7 @@ const cases = [
     name: "custom-not-found",
     pathname: "/devices/not-a-reviewed-device",
     status: 404,
-    includes: ["That evidence page does not exist.", "Browse devices"],
+    includes: ["That catalog page does not exist.", "Browse devices"],
   },
 ];
 

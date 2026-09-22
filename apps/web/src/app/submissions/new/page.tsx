@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { devices } from "@/lib/catalog";
+import { reviewedDevices } from "@/lib/catalog";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -21,7 +21,7 @@ const ERRORS: Record<string, string> = {
   missing_field: "Complete every required field before submitting.",
   field_too_long: "One or more values exceed the community-submission contract limits.",
   invalid_choice: "One of the selected configuration values is unsupported.",
-  invalid_device: "Select a device currently reviewed by CompatForge.",
+  invalid_device: "Enter a device identity currently present in the CompatForge catalog.",
   invalid_handoff: "Enter the lowercase SHA-256 printed for your approved contribution handoff.",
   conditions_required: "A conditional result must include at least one condition.",
   limitations_required: "Document at least one limitation of this reproduction.",
@@ -92,15 +92,26 @@ export default async function NewSubmissionPage({ searchParams }: PageProps) {
           <fieldset className="form-section">
             <legend>1. Handoff and device</legend>
             <label>
-              Reviewed device
-              <select name="target_device_id" required defaultValue="">
-                <option value="" disabled>Select a device</option>
-                {devices.map((device) => (
+              Device USB ID
+              <input
+                name="target_device_id"
+                list="reviewed-submission-device-suggestions"
+                required
+                maxLength={13}
+                pattern="usb:[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4}"
+                placeholder="usb:0403:6001"
+              />
+              <datalist id="reviewed-submission-device-suggestions">
+                {reviewedDevices.map((device) => (
                   <option key={device.id} value={device.id}>
-                    {device.manufacturer} {device.name} — {device.id}
+                    {device.manufacturer} {device.name}
                   </option>
                 ))}
-              </select>
+              </datalist>
+              <span className="field-help">
+                Use any identity in the <Link href="/devices">published USB catalog</Link>; reviewed devices
+                are offered as quick suggestions.
+              </span>
             </label>
             <label>
               Approved handoff SHA-256

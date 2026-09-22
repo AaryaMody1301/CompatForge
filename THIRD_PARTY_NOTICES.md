@@ -22,4 +22,4 @@ The first such record references the public `avrdudes/avrdude` Windows-on-ARM64 
 
 ## Redistribution boundary
 
-The Git repository contains synthetic fixtures for deterministic tests and curated factual evidence metadata. Scheduled live USB registry refreshes are uploaded as review artifacts rather than committed automatically. Any future published third-party data snapshot must preserve its source manifest and applicable attribution/license notices.
+The Git repository contains synthetic fixtures, curated factual evidence metadata, and a generated compact USB identity snapshot at `data/catalog/usb-device-catalog.json`. That snapshot preserves the upstream homepage, source URL, declared dual-license terms, parser version, and source SHA-256. Scheduled live USB registry refreshes remain review-gated: changed snapshots are prepared on a bot-owned pull-request branch and are never merged directly to `main`.

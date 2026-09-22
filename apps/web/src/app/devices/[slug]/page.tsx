@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { devices, getDeviceBySlug } from "@/lib/catalog";
+import { getDeviceBySlug, reviewedDevices } from "@/lib/catalog";
 import {
   formatArchitecture,
   formatConnection,
@@ -11,10 +11,10 @@ import {
   getDeviceEvidence,
 } from "@/lib/evidence";
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return devices.map((device) => ({ slug: device.slug }));
+  return reviewedDevices.map((device) => ({ slug: device.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
