@@ -240,7 +240,7 @@ const cases = [
     name: "custom-not-found",
     pathname: "/devices/not-a-reviewed-device",
     status: 404,
-    includes: ["That evidence page does not exist.", "Browse devices"],
+    includes: ["That catalog page does not exist.", "Browse devices"],
   },
 ];
 
