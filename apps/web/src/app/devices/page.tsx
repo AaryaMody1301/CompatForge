@@ -42,7 +42,7 @@ function pageHref(query: string, page: number) {
 const defaultBrowseDevices = [...devices].sort(
   (left, right) =>
     Number(evidenceDeviceIds.has(right.id)) - Number(evidenceDeviceIds.has(left.id)) ||
-    Number(right.reviewed_metadata) - Number(left.reviewed_metadata) ||
+    Number(right.curated_metadata) - Number(left.curated_metadata) ||
     compareDeviceNames(left, right),
 );
 

@@ -27,7 +27,7 @@ Pull requests also run browser acceptance, deterministic data builds, dependency
 
 ## Device identities
 
-A device may be added to the reviewed catalog when its canonical USB VID/PID and product identity are supported by a public source. Identity data must not imply compatibility. If the repository has no reviewed support statement or observation for that device, the product must continue to report compatibility as unknown.
+The published USB registry is generated from the versioned upstream identity snapshot. Curated CompatForge metadata belongs in `data/catalog/curated-devices.json` and must use a canonical USB VID/PID that exists in the published registry. Curated metadata must not imply compatibility. If the repository has no reviewed support statement or observation for an identity, the product must continue to report compatibility as unknown.
 
 ## Compatibility evidence
 

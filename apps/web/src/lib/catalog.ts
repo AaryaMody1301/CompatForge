@@ -1,5 +1,5 @@
 import publishedUsbCatalog from "../../../../data/catalog/usb-device-catalog.json";
-import releasePreviewDevices from "../../../../data/catalog/release-preview-devices.json";
+import curatedDeviceMetadata from "../../../../data/catalog/curated-devices.json";
 
 type PublishedCatalog = {
   counts: { devices: number; vendors: number };
@@ -29,11 +29,11 @@ type CuratedDevice = {
 };
 
 export type Device = CuratedDevice & {
-  reviewed_metadata: boolean;
+  curated_metadata: boolean;
 };
 
 const published = publishedUsbCatalog as unknown as PublishedCatalog;
-const curated = releasePreviewDevices as readonly CuratedDevice[];
+const curated = curatedDeviceMetadata as readonly CuratedDevice[];
 const curatedById = new Map(curated.map((device) => [device.id, device] as const));
 
 function canonicalDeviceId(vendorId: string, productId: string) {
@@ -67,7 +67,7 @@ const generatedDevices = published.vendors.flatMap(([vendorId, vendorName, produ
     const id = canonicalDeviceId(vendorId, productId);
     const curatedDevice = curatedById.get(id);
     if (curatedDevice) {
-      return { ...curatedDevice, reviewed_metadata: true } satisfies Device;
+      return { ...curatedDevice, curated_metadata: true } satisfies Device;
     }
     return {
       id,
@@ -79,14 +79,14 @@ const generatedDevices = published.vendors.flatMap(([vendorId, vendorName, produ
       summary:
         "Known USB identity from the USB ID Repository. Compatibility remains unknown until reviewed evidence is available.",
       identity_source: registryUrl(vendorId, productId),
-      reviewed_metadata: false,
+      curated_metadata: false,
     } satisfies Device;
   }),
 );
 
 export const devices: readonly Device[] = generatedDevices;
-export const reviewedDevices: readonly Device[] = devices.filter(
-  (device) => device.reviewed_metadata,
+export const curatedDevices: readonly Device[] = devices.filter(
+  (device) => device.curated_metadata,
 );
 export const catalogCounts = published.counts;
 export const catalogSource = published.source;
@@ -147,7 +147,7 @@ export function deviceSearchScore(device: Device, query: string) {
   if (normalizedManufacturer.startsWith(normalizedQuery)) score += 260;
   if (tokens[0] && normalizedManufacturer.startsWith(tokens[0])) score += 700;
   if (normalizedAliases.some((alias) => alias.startsWith(normalizedQuery))) score += 240;
-  if (device.reviewed_metadata) score += 40;
+  if (device.curated_metadata) score += 40;
   return score;
 }
 
@@ -164,7 +164,7 @@ export function searchDevices(query: string) {
     .sort(
       (left, right) =>
         right.score - left.score ||
-        Number(right.device.reviewed_metadata) - Number(left.device.reviewed_metadata) ||
+        Number(right.device.curated_metadata) - Number(left.device.curated_metadata) ||
         compareDeviceNames(left.device, right.device),
     )
     .map((item) => item.device);

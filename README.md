@@ -8,9 +8,9 @@ CompatForge answers a configuration-level question:
 
 A known USB identity is not a compatibility claim. Missing evidence stays `UNKNOWN`, conflicting evidence stays visible, and vendor support is kept separate from reproduced observations.
 
-## Release preview status
+## Project status
 
-The implementation roadmap through Phase 8 is complete. The repository now includes:
+The planned implementation roadmap is complete. The repository now includes:
 
 - deterministic USB identity ingestion and a versioned published USB registry snapshot;
 - reviewed compatibility evidence with explicit provenance and freshness;
@@ -27,7 +27,7 @@ The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external r
 
 The web catalog publishes the complete versioned `usb.ids` product-identity snapshot separately from CompatForge compatibility evidence. Registry identities can be searched, opened, and checked, but they remain compatibility `UNKNOWN` until reviewed support statements or observations exist. Community submissions are exposed only when their hosted authentication and moderation configuration is explicitly enabled.
 
-`data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/release-preview-devices.json` is now only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes generate the full candidate catalog and prepare a review pull request when the upstream snapshot changes; they never create compatibility claims or merge directly to `main`.
+`data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/curated-devices.json` is now only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes generate the full candidate catalog and prepare a review pull request when the upstream snapshot changes; they never create compatibility claims or merge directly to `main`.
 
 ## Repository layout
 
@@ -44,7 +44,7 @@ supabase/                     database migrations and pgTAP tests
 tests/                        Python contract and pipeline tests
 tools/                        deterministic packaging helpers
 .github/workflows/            CI, security, refresh, and release workflows
-docs/                         architecture and operating documentation
+docs/                         architecture and operating documentation (see docs/README.md)
 ```
 
 ## Validate the repository
@@ -100,7 +100,7 @@ compatforge-hw prepare-contribution \
   --output contribution-handoff.json
 ```
 
-See [`docs/DIAGNOSTIC_AGENT.md`](docs/DIAGNOSTIC_AGENT.md), [`docs/PRIVACY.md`](docs/PRIVACY.md), and [`docs/CLI_RELEASE.md`](docs/CLI_RELEASE.md).
+See [`docs/README.md`](docs/README.md) for the documentation index, including diagnostics, privacy, release, evidence, and web-product guides.
 
 ## Compatibility resolver
 

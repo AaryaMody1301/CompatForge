@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDeviceBySlug, reviewedDevices } from "@/lib/catalog";
+import { curatedDevices, getDeviceBySlug } from "@/lib/catalog";
 import {
   formatArchitecture,
   formatConnection,
@@ -16,7 +16,7 @@ import { countLabel, pageMetadata } from "@/lib/site";
 export const dynamicParams = true;
 
 export function generateStaticParams() {
-  return reviewedDevices.map((device) => ({ slug: device.slug }));
+  return curatedDevices.map((device) => ({ slug: device.slug }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   );
   const evidence = getDeviceEvidence(device.id);
   const indexable =
-    device.reviewed_metadata ||
+    device.curated_metadata ||
     evidence.supportStatements.length > 0 ||
     evidence.observations.length > 0;
   return indexable
