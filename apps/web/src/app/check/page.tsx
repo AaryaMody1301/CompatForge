@@ -149,9 +149,14 @@ export default async function CheckPage({ searchParams }: Props) {
           <div className="notice">
             <strong>Invalid configuration.</strong>
             <p>
-              {invalidFields.join(", ")} {invalidFields.length === 1 ? "is" : "are"} outside the
-              known USB identity catalog. No compatibility claim was generated. Choose values from the
-              form and try again.
+              {invalidFields
+                .map((field) =>
+                  field === "device"
+                    ? "device is outside the known USB identity catalog"
+                    : `${field} is outside the available checker options`,
+                )
+                .join("; ")}.
+              {" "}No compatibility claim was generated. Choose values from the form and try again.
             </p>
           </div>
         </section>

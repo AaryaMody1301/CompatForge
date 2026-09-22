@@ -209,7 +209,7 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "architecture is outside the reviewed checker options.",
+      "architecture is outside the available checker options.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
