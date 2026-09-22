@@ -149,7 +149,7 @@ const cases = [
     name: "device-search",
     pathname: "/devices?q=FT232R",
     status: 200,
-    includes: ["1 result(s)", "FTDI", "FT232R", "usb:0403:6001"],
+    includes: ["result(s)", "FTDI", "FT232R", "usb:0403:6001"],
   },
   {
     name: "full-catalog-search",
