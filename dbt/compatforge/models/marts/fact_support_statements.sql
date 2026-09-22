@@ -10,6 +10,7 @@ select
     s.minimum_usb_generation,
     case when s.driver_name is null then null else md5(lower(s.driver_name) || '|' || coalesce(lower(s.driver_version), '')) end as driver_key,
     case when s.software_name is null then null else md5(lower(s.software_name) || '|' || coalesce(lower(s.software_version), '')) end as software_key,
+    s.release_channel,
     md5('support|' || s.connection_kind || '|' || coalesce(s.minimum_usb_generation, '')) as connection_key,
     s.support_status,
     s.conditions_json,

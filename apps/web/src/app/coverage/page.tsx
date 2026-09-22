@@ -10,8 +10,13 @@ import {
   observations,
   supportStatements,
 } from "@/lib/evidence";
+import { pageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Coverage" };
+export const metadata: Metadata = pageMetadata(
+  "Coverage",
+  "See which USB identities have reviewed vendor support or observed compatibility evidence, and which remain unknown.",
+  "/coverage",
+);
 
 const evidenceDeviceIds = new Set([
   ...supportStatements.map((statement) => statement.device_id),
@@ -53,8 +58,8 @@ export default function CoveragePage() {
         <div className="metrics">
           <div><strong>{devices.length.toLocaleString("en")}</strong><span>known identities</span></div>
           <div><strong>{evidenceDevices.length.toLocaleString("en")}</strong><span>evidence-backed devices</span></div>
-          <div><strong>{supportStatements.length}</strong><span>support statements</span></div>
-          <div><strong>{observations.length}</strong><span>observations</span></div>
+          <div><strong>{supportStatements.length.toLocaleString("en")}</strong><span>{supportStatements.length === 1 ? "support statement" : "support statements"}</span></div>
+          <div><strong>{observations.length.toLocaleString("en")}</strong><span>{observations.length === 1 ? "observation" : "observations"}</span></div>
         </div>
       </section>
 

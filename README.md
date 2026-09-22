@@ -12,7 +12,7 @@ A known USB identity is not a compatibility claim. Missing evidence stays `UNKNO
 
 The implementation roadmap through Phase 8 is complete. The repository now includes:
 
-- deterministic USB identity ingestion and reviewed release-preview catalog data;
+- deterministic USB identity ingestion and a versioned published USB registry snapshot;
 - reviewed compatibility evidence with explicit provenance and freshness;
 - a deterministic compatibility resolver;
 - a Next.js web product with browser acceptance and production security-header checks;
@@ -25,7 +25,7 @@ The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external r
 
 ## Device coverage
 
-The web catalog publishes the complete reviewed `usb.ids` product-identity snapshot separately from compatibility evidence. Identity-only devices can be searched, opened, checked, and used for community submissions, but they return unknown compatibility until reviewed support statements or observations exist.
+The web catalog publishes the complete versioned `usb.ids` product-identity snapshot separately from CompatForge compatibility evidence. Registry identities can be searched, opened, and checked, but they remain compatibility `UNKNOWN` until reviewed support statements or observations exist. Community submissions are exposed only when their hosted authentication and moderation configuration is explicitly enabled.
 
 `data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/release-preview-devices.json` is now only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes generate the full candidate catalog and prepare a review pull request when the upstream snapshot changes; they never create compatibility claims or merge directly to `main`.
 

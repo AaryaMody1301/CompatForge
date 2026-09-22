@@ -100,6 +100,7 @@ def _support_row(record: dict[str, Any]) -> tuple[Any, ...]:
         driver.get("version"),
         software.get("name"),
         software.get("version"),
+        record.get("release_channel"),
         record["support_status"],
         _json_text(record.get("conditions", [])),
         evidence["source_type"],
@@ -196,6 +197,7 @@ def ingest_evidence(
                 driver_version VARCHAR,
                 software_name VARCHAR,
                 software_version VARCHAR,
+                release_channel VARCHAR,
                 support_status VARCHAR NOT NULL,
                 conditions_json VARCHAR NOT NULL,
                 evidence_source_type VARCHAR NOT NULL,
@@ -212,7 +214,7 @@ def ingest_evidence(
         if support_rows:
             support_insert = (
                 "INSERT INTO bronze.support_statements VALUES "
-                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
             )
             connection.executemany(support_insert, support_rows)
 

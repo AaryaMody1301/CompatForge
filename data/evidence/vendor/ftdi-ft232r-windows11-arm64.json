@@ -8,11 +8,18 @@
     "operating_system": {
       "family": "windows",
       "version_mode": "exact",
-      "versions": ["11"]
+      "versions": [
+        "11"
+      ]
     },
-    "connection": {"kind": "any_usb"}
+    "connection": {
+      "kind": "any_usb"
+    }
   },
-  "driver": {"name": "FTDI VCP", "version": "2.12.36.20A"},
+  "driver": {
+    "name": "FTDI VCP",
+    "version": "2.12.36.20A"
+  },
   "support_status": "supported_with_conditions",
   "conditions": [
     "The Windows setup executable is not available for ARM64; use the ARM64 driver package and the applicable installation guidance."
@@ -27,10 +34,11 @@
     ],
     "source_note": "FTDI lists a current ARM64 VCP driver for Windows 11 and notes that the setup executable is not available for ARM64. The FT232R uses the FTDI VCP driver family."
   },
-  "reviewed_at": "2026-09-07T11:20:00Z",
+  "reviewed_at": "2026-09-22T06:00:00Z",
   "recorded_at": "2026-09-07T11:20:00Z",
   "limitations": [
     "This is a vendor driver-support statement, not an exact laptop-level reproduction.",
     "Driver availability does not prove compatibility through every hub, dock, adapter, or cable."
-  ]
+  ],
+  "release_channel": "stable"
 }

@@ -7,9 +7,11 @@ import {
   formatConnection,
   formatDate,
   formatOsFamily,
+  formatReleaseChannel,
   formatVersionScope,
   getDeviceEvidence,
 } from "@/lib/evidence";
+import { countLabel, pageMetadata } from "@/lib/site";
 
 export const dynamicParams = true;
 
@@ -20,7 +22,22 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const device = getDeviceBySlug(slug);
-  return { title: device ? `${device.manufacturer} ${device.name}` : "Device" };
+  if (!device) {
+    return { title: "Device not found", robots: { index: false, follow: false } };
+  }
+  const metadata = pageMetadata(
+    `${device.manufacturer} ${device.name}`,
+    device.summary,
+    `/devices/${device.slug}`,
+  );
+  const evidence = getDeviceEvidence(device.id);
+  const indexable =
+    device.reviewed_metadata ||
+    evidence.supportStatements.length > 0 ||
+    evidence.observations.length > 0;
+  return indexable
+    ? metadata
+    : { ...metadata, robots: { index: false, follow: true } };
 }
 
 export default async function DevicePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -53,8 +70,8 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
         <p className="lede">{device.summary}</p>
         <div className="inline-meta">
           <code>{device.id}</code>
-          <span>{evidence.supportStatements.length} support statement(s)</span>
-          <span>{evidence.observations.length} observation(s)</span>
+          <span>{countLabel(evidence.supportStatements.length, "support statement")}</span>
+          <span>{countLabel(evidence.observations.length, "observation")}</span>
         </div>
         <div className="actions">
           <Link className="button button-primary" href={`/check?device=${encodeURIComponent(device.id)}`}>
@@ -86,7 +103,7 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
                   <div>
                     <h3>{formatOsFamily(statement.scope.operating_system.family)} {formatVersionScope(statement)}</h3>
                     <p className="meta">
-                      {formatArchitecture(statement.scope.architecture)} · {formatConnection(statement.scope.connection.kind)} · reviewed {formatDate(statement.reviewed_at)}
+                      {formatArchitecture(statement.scope.architecture)} · {formatConnection(statement.scope.connection.kind)} · {formatReleaseChannel(statement.release_channel)} · reviewed {formatDate(statement.reviewed_at)}
                     </p>
                   </div>
                   <span className={`badge badge-${statement.support_status}`}>
@@ -97,6 +114,12 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
                   <ul>{statement.conditions.map((condition) => <li key={condition}>{condition}</li>)}</ul>
                 ) : null}
                 <p>{statement.evidence.source_note}</p>
+                {statement.limitations?.length ? (
+                  <div className="notice compact-notice">
+                    <strong>Scope limitations</strong>
+                    <ul>{statement.limitations.map((limitation) => <li key={limitation}>{limitation}</li>)}</ul>
+                  </div>
+                ) : null}
                 <div className="sources">
                   {statement.evidence.sources.map((source) => (
                     <a href={source.source_url} key={source.source_url} rel="noreferrer" target="_blank">

@@ -6,6 +6,7 @@ import pytest
 pytest.importorskip("duckdb")
 
 from compatforge_pipeline.identity_pipeline import (
+    _usb_ids_header_metadata,
     build_bronze,
     export_public_snapshot,
     export_web_catalog,
@@ -13,6 +14,13 @@ from compatforge_pipeline.identity_pipeline import (
 
 FIXTURE = Path(__file__).parent / "fixtures" / "usb.ids"
 FIXED_RETRIEVED_AT = "2026-01-01T00:00:00Z"
+
+
+def test_usb_ids_header_metadata() -> None:
+    metadata = _usb_ids_header_metadata(
+        b"# Version: 2026.06.26\n# Date:    2026-06-26 20:34:02\n"
+    )
+    assert metadata == {"version": "2026.06.26", "snapshot_date": "2026-06-26"}
 
 
 def test_bronze_build_is_provenance_complete(tmp_path: Path) -> None:
@@ -87,6 +95,8 @@ def test_public_snapshot_contains_identity_only(tmp_path: Path) -> None:
     assert web_catalog["counts"] == {"devices": 3, "vendors": 2}
     assert payload == web_catalog
     assert payload["source"]["parser_version"] == "2"
+    assert payload["source"]["version"] is None
+    assert payload["source"]["snapshot_date"] is None
     assert payload["vendors"] == [
         [
             "1234",

@@ -17,7 +17,7 @@ def test_packaged_snapshot_matches_reviewed_evidence() -> None:
     packaged = load_packaged_snapshot()
     assert packaged == expected
     assert packaged["observation_count"] == 1
-    assert packaged["support_statement_count"] == 5
+    assert packaged["support_statement_count"] == 11
     assert len(snapshot_sha256(packaged)) == 64
 
 
@@ -27,9 +27,15 @@ def test_packaged_snapshot_has_expected_reviewed_ids() -> None:
         "obs_avrdude_ft232r_win11arm64"
     ]
     assert [item["statement_id"] for item in snapshot["support_statements"]] == [
+        "sup_ftdi_ft232r_macos_arm64",
+        "sup_ftdi_ft232r_macos_x64",
+        "sup_ftdi_ft232r_ubuntu_kernel_vcp",
         "sup_ftdi_ft232r_win11_arm64",
+        "sup_ftdi_ft232r_windows_x64",
         "sup_saleae_lp8_macos_arm64",
         "sup_saleae_lp8_macos_x64",
+        "sup_saleae_lp8_ubuntu_arm64_insider",
+        "sup_saleae_lp8_ubuntu_x64",
         "sup_saleae_lp8_windows_arm64",
         "sup_saleae_lp8_windows_x64",
     ]

@@ -2,13 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { getDeviceById } from "@/lib/catalog";
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getCommunityFeatureState } from "@/lib/supabase/config";
+import { pageMetadata } from "@/lib/site";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = {
-  title: "Community submissions",
-  description: "Submit and track privacy-minimized hardware compatibility reproductions.",
-};
+const communityMetadata = pageMetadata(
+  "Community submissions",
+  "Submit and track privacy-minimized hardware compatibility reproductions.",
+  "/submissions",
+);
+export const metadata: Metadata =
+  getCommunityFeatureState() === "ready"
+    ? communityMetadata
+    : { ...communityMetadata, robots: { index: false, follow: false } };
 
 type DashboardRow = {
   id: string;
@@ -33,8 +39,10 @@ function authMessage(code: string | undefined) {
   switch (code) {
     case "required":
       return "Sign in with GitHub before creating a community submission.";
+    case "disabled":
+      return "Community submissions are disabled on this deployment.";
     case "unconfigured":
-      return "Community authentication is not configured on this deployment yet.";
+      return "Community submissions are enabled but the Supabase configuration is incomplete.";
     case "oauth_start_failed":
     case "callback_failed":
     case "callback_missing_code":
@@ -52,7 +60,7 @@ function formatUtc(value: string) {
 
 export default async function SubmissionsPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const configured = Boolean(getSupabaseConfig());
+  const communityState = getCommunityFeatureState();
   const authNotice = authMessage(first(params.auth));
   const submitted = first(params.submitted);
   const signedOut = first(params.signed_out) === "1";
@@ -77,18 +85,29 @@ export default async function SubmissionsPage({ searchParams }: PageProps) {
         <p className="eyebrow">Community evidence</p>
         <h1>Reproductions enter a review queue, not the evidence corpus.</h1>
         <p className="lede">
-          Sign in with GitHub to contribute an anonymized compatibility reproduction and track its
-          moderation state. CompatForge never auto-publishes a community report.
+          {communityState === "ready"
+            ? "Sign in with GitHub to contribute an anonymized compatibility reproduction and track its moderation state. CompatForge never auto-publishes a community report."
+            : "CompatForge keeps community reports behind an explicit hosted feature gate. The public compatibility catalog remains available in read-only mode."}
         </p>
       </section>
 
-      {!configured ? (
+      {communityState === "disabled" ? (
         <section>
           <div className="notice">
-            <h2>Community auth is not configured</h2>
+            <h2>Community submissions are disabled on this deployment.</h2>
             <p>
-              Add the Supabase project URL and publishable key to this deployment before enabling
-              GitHub sign-in. Public compatibility pages remain available without these values.
+              The public compatibility catalog remains read-only. Enable the community feature only
+              when the moderation database and authentication configuration are intentionally ready.
+            </p>
+          </div>
+        </section>
+      ) : communityState === "misconfigured" ? (
+        <section>
+          <div className="notice error-notice">
+            <h2>Community submissions are enabled but not fully configured.</h2>
+            <p>
+              Add the Supabase project URL and publishable key before exposing GitHub sign-in.
+              Public compatibility pages remain available while this is corrected.
             </p>
           </div>
         </section>

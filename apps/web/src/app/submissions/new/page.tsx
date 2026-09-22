@@ -2,14 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { reviewedDevices } from "@/lib/catalog";
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { getCommunityFeatureState } from "@/lib/supabase/config";
+import { pageMetadata } from "@/lib/site";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 import { submitCommunityEvidence } from "../actions";
 
 export const metadata: Metadata = {
-  title: "New community submission",
+  ...pageMetadata(
+    "New community submission",
+    "Submit a privacy-minimized hardware compatibility reproduction for review.",
+    "/submissions/new",
+  ),
+  robots: { index: false, follow: false },
 };
 
 type PageProps = {
@@ -44,14 +49,20 @@ export default async function NewSubmissionPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const errorCode = first(params.error);
 
-  if (!getSupabaseConfig()) {
+  const communityState = getCommunityFeatureState();
+  if (communityState !== "ready") {
     return (
       <main className="shell page-stack">
         <section className="compact-hero">
           <p className="eyebrow">Community evidence</p>
-          <h1>Submission service is not configured.</h1>
+          <h1>
+            {communityState === "disabled"
+              ? "Community submissions are disabled."
+              : "Submission service configuration is incomplete."}
+          </h1>
           <p className="lede">
-            Add the Supabase project URL and publishable key before accepting authenticated reports.
+            The public compatibility catalog remains available without the community submission
+            service.
           </p>
           <Link className="button" href="/submissions">
             Back to submissions
@@ -95,22 +106,14 @@ export default async function NewSubmissionPage({ searchParams }: PageProps) {
               Device USB ID
               <input
                 name="target_device_id"
-                list="reviewed-submission-device-suggestions"
                 required
                 maxLength={13}
                 pattern="usb:[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4}"
                 placeholder="usb:0403:6001"
               />
-              <datalist id="reviewed-submission-device-suggestions">
-                {reviewedDevices.map((device) => (
-                  <option key={device.id} value={device.id}>
-                    {device.manufacturer} {device.name}
-                  </option>
-                ))}
-              </datalist>
               <span className="field-help">
-                Use any identity in the <Link href="/devices">published USB catalog</Link>; reviewed devices
-                are offered as quick suggestions.
+                Use any identity from the <Link href="/devices">searchable USB catalog</Link>. Device
+                pages provide a canonical VID/PID you can paste here.
               </span>
             </label>
             <label>

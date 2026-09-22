@@ -44,6 +44,8 @@ def test_published_usb_catalog_is_broad_canonical_and_provenanced() -> None:
     assert payload["source"]["homepage"] == "https://usb-ids.gowdy.us/"
     assert payload["source"]["license"] == "GPL-2.0-or-later OR BSD-3-Clause"
     assert payload["source"]["parser_version"] == "2"
+    assert payload["source"]["version"] == "2026.06.26"
+    assert payload["source"]["snapshot_date"] == "2026-06-26"
 
     vendor_ids = [vendor_id for vendor_id, _vendor_name, _products in payload["vendors"]]
     assert vendor_ids == sorted(vendor_ids)

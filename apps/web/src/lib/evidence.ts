@@ -45,6 +45,7 @@ export type SupportStatement = {
   driver?: { name: string; version?: string };
   software?: { name: string; version?: string };
   support_status: "supported" | "supported_with_conditions" | "unsupported";
+  release_channel?: "stable" | "insider" | "preview" | "experimental" | "legacy";
   conditions?: string[];
   evidence: {
     source_type: "vendor_documentation" | "issue_report";
@@ -253,6 +254,13 @@ export function formatArchitecture(value: Architecture | "any") {
 
 export function formatOsFamily(value: OsFamily) {
   return { windows: "Windows", macos: "macOS", ubuntu: "Ubuntu" }[value];
+}
+
+export function formatReleaseChannel(
+  value: SupportStatement["release_channel"],
+) {
+  if (!value) return "unspecified channel";
+  return `${value.replaceAll("_", " ")} channel`;
 }
 
 export function formatConnection(value: ConnectionKind | "any_usb") {

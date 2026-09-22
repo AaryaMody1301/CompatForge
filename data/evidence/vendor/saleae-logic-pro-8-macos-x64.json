@@ -15,7 +15,9 @@
       "minimum_usb_generation": "2.0"
     }
   },
-  "software": {"name": "Saleae Logic 2"},
+  "software": {
+    "name": "Saleae Logic 2"
+  },
   "support_status": "supported_with_conditions",
   "conditions": [
     "USB 3.0 is required for advertised Logic Pro 8 performance; USB 2.0 can operate with reduced performance."
@@ -38,7 +40,10 @@
     ],
     "source_note": "Saleae documents Logic 2 support on macOS 12 and later for Intel systems, identifies Logic Pro 8 as USB 21A9:1005, and documents USB 3.0 as the full-performance path while USB 2.0 operates at reduced performance."
   },
-  "reviewed_at": "2026-09-07T11:20:00Z",
+  "reviewed_at": "2026-09-22T06:00:00Z",
   "recorded_at": "2026-09-07T11:20:00Z",
-  "limitations": ["This is vendor support documentation, not an exact host-level reproduction."]
+  "limitations": [
+    "This is vendor support documentation, not an exact host-level reproduction."
+  ],
+  "release_channel": "stable"
 }

@@ -59,16 +59,17 @@ Keep the production redirect exact even when preview wildcards are enabled.
 
 ## 4. Configure the Next.js deployment
 
-Copy the two public values shown by the Supabase project into Vercel environment variables:
+Enable the community feature only after the hosted database, OAuth provider, and moderation path are ready. Configure these Vercel environment variables together:
 
 ```text
+COMPATFORGE_COMMUNITY_ENABLED=1
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 The checked-in `apps/web/.env.example` documents the same names.
 
-When either value is absent, public CompatForge pages continue to work and `/submissions` shows an explicit unconfigured state. This prevents an incomplete community-backend rollout from breaking the existing read-only compatibility product.
+When `COMPATFORGE_COMMUNITY_ENABLED` is not `1`, the public product remains intentionally read-only and the Contribute navigation item is hidden. If the feature flag is enabled while either public Supabase value is missing or invalid, `/submissions` reports a configuration error instead of exposing a broken sign-in flow.
 
 ## 5. Acceptance check
 

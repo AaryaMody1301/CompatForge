@@ -31,6 +31,18 @@ def _utc_now() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
+def _usb_ids_header_metadata(content: bytes) -> dict[str, str | None]:
+    version = None
+    snapshot_date = None
+    for line in content.decode("utf-8", errors="replace").splitlines()[:40]:
+        if line.startswith("# Version:"):
+            version = line.partition(":")[2].strip() or None
+        elif line.startswith("# Date:"):
+            raw_date = line.partition(":")[2].strip()
+            snapshot_date = raw_date[:10] if raw_date else None
+    return {"version": version, "snapshot_date": snapshot_date}
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -64,6 +76,7 @@ def build_bronze(
     content = downloaded.content
     vendors, devices = parse_usb_ids(content)
     digest = source_sha256(content)
+    header_metadata = _usb_ids_header_metadata(content)
     effective_source_url = source_url or downloaded.source_url
     retrieved_at = retrieved_at or _utc_now()
 
@@ -140,6 +153,8 @@ def build_bronze(
             "source_url": effective_source_url,
             "license": USB_IDS_LICENSE,
             "parser_version": USB_IDS_PARSER_VERSION,
+            "version": header_metadata["version"],
+            "snapshot_date": header_metadata["snapshot_date"],
             "retrieved_at": retrieved_at,
             "upstream_last_modified": downloaded.upstream_last_modified,
             "upstream_etag": downloaded.upstream_etag,
@@ -254,6 +269,8 @@ def export_web_catalog(*, workspace: Path, output_path: Path) -> dict[str, Any]:
             "license": source["license"],
             "name": source["name"],
             "parser_version": source["parser_version"],
+            "version": source.get("version"),
+            "snapshot_date": source.get("snapshot_date"),
             "sha256": source["sha256"],
             "source_url": source["source_url"],
         },
