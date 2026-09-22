@@ -76,8 +76,7 @@ def test_curated_metadata_is_unique_canonical_and_published() -> None:
     assert set(ids) <= published_ids
 
 
-def test_every_reviewed_evidence_device_exists_in_curated_and_full_catalog() -> None:
-    curated_ids = {item["id"] for item in _curated()}
+def test_every_reviewed_evidence_device_exists_in_full_catalog() -> None:
     published_ids = _published_ids(_published())
     evidence_paths = [
         *sorted((ROOT / "data" / "evidence" / "observations").glob("*.json")),
@@ -87,5 +86,4 @@ def test_every_reviewed_evidence_device_exists_in_curated_and_full_catalog() -> 
         json.loads(path.read_text(encoding="utf-8"))["device_id"] for path in evidence_paths
     }
 
-    assert evidence_ids <= curated_ids
     assert evidence_ids <= published_ids

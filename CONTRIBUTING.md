@@ -27,7 +27,7 @@ Pull requests also run browser acceptance, deterministic data builds, dependency
 
 ## Device identities
 
-The published USB registry is generated from the versioned upstream identity snapshot. Curated CompatForge metadata belongs in `data/catalog/curated-devices.json` and must use a canonical USB VID/PID that exists in the published registry. Curated metadata must not imply compatibility. If the repository has no reviewed support statement or observation for an identity, the product must continue to report compatibility as unknown.
+The published USB registry is generated from the versioned upstream identity snapshot. Curated CompatForge metadata belongs in `data/catalog/curated-devices.json` and must use a canonical USB VID/PID that exists in the published registry. Curated metadata must not imply compatibility, and evidence does not require a curated metadata entry: reviewed evidence may target any identity in the published registry. If the repository has no reviewed support statement or observation for an identity, the product must continue to report compatibility as unknown.
 
 ## Compatibility evidence
 
