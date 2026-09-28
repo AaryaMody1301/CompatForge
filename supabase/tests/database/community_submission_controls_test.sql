@@ -2,7 +2,15 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(15);
+
+select ok(
+  pg_catalog.strpos(
+    pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
+    'for update'
+  ) > 0,
+  'per-user row lock serializes concurrent rolling-window submission counts'
+);
 
 select ok(
   exists (

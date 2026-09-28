@@ -26,6 +26,14 @@ class CompatibilityQuery:
     os_family: str
     os_version: str
     connection_path: tuple[str, ...]
+    os_build: str | None = None
+    driver_name: str | None = None
+    driver_version: str | None = None
+    software_name: str | None = None
+    software_version: str | None = None
+    firmware_version: str | None = None
+    usb_generation: str | None = None
+    connection_components: tuple[dict[str, str], ...] = ()
 
     @classmethod
     def from_mapping(cls, payload: dict[str, Any]) -> CompatibilityQuery:
@@ -42,11 +50,34 @@ class CompatibilityQuery:
             os_family=operating_system["family"],
             os_version=operating_system["version"],
             connection_path=path,
+            os_build=operating_system.get("build"),
+            driver_name=(payload.get("driver") or {}).get("name"),
+            driver_version=(payload.get("driver") or {}).get("version"),
+            software_name=(payload.get("software") or {}).get("name"),
+            software_version=(payload.get("software") or {}).get("version"),
+            firmware_version=payload.get("firmware_version"),
+            usb_generation=payload.get("usb_generation"),
+            connection_components=tuple(payload["connection_path"]),
         )
 
 
 def _norm(value: str) -> str:
     return value.strip().casefold()
+
+
+def _optional_matches(expected: str | None, actual: str | None) -> bool:
+    return expected is None or (actual is not None and _norm(expected) == _norm(actual))
+
+
+def _metadata_matches(record: dict[str, Any], query: CompatibilityQuery) -> bool:
+    driver = record.get("driver") or {}
+    software = record.get("software") or {}
+    return (
+        _optional_matches(query.driver_name, driver.get("name"))
+        and _optional_matches(query.driver_version, driver.get("version"))
+        and _optional_matches(query.software_name, software.get("name"))
+        and _optional_matches(query.software_version, software.get("version"))
+    )
 
 
 def _load_records(paths: list[Path], record_type: str) -> list[dict[str, Any]]:
@@ -85,6 +116,20 @@ def _observation_matches(
     if operating_system["family"] != query.os_family:
         return False
     if path != query.connection_path:
+        return False
+    if not _optional_matches(query.os_build, operating_system.get("build")):
+        return False
+    if not _optional_matches(query.firmware_version, observation.get("firmware_version")):
+        return False
+    if not _metadata_matches(observation, query):
+        return False
+    if query.connection_components and any(
+        not _optional_matches(requested.get(field), actual.get(field))
+        for requested, actual in zip(
+            query.connection_components, observation["connection_path"], strict=True
+        )
+        for field in ("manufacturer", "model")
+    ):
         return False
     if not ignore_os_version and _norm(operating_system["version"]) != _norm(query.os_version):
         return False
@@ -149,7 +194,10 @@ def _version_matches(rule: dict[str, Any], query_version: str) -> bool:
         return _norm(query_version) in {_norm(item) for item in rule["versions"]}
     minimum = _numeric_version(rule["minimum_version"])
     current = _numeric_version(query_version)
-    return minimum is not None and current is not None and current >= minimum
+    if minimum is None or current is None:
+        return False
+    length = max(len(minimum), len(current))
+    return current + (0,) * (length - len(current)) >= minimum + (0,) * (length - len(minimum))
 
 
 def _support_matches(statement: dict[str, Any], query: CompatibilityQuery) -> bool:
@@ -162,6 +210,14 @@ def _support_matches(statement: dict[str, Any], query: CompatibilityQuery) -> bo
     if operating_system["family"] != query.os_family:
         return False
     if not _version_matches(operating_system, query.os_version):
+        return False
+    if not _metadata_matches(statement, query):
+        return False
+    required_usb = scope["connection"].get("minimum_usb_generation")
+    if required_usb and query.usb_generation and not _version_matches(
+        {"version_mode": "minimum", "minimum_version": required_usb},
+        query.usb_generation,
+    ):
         return False
     connection_kind = scope["connection"]["kind"]
     return connection_kind == "any_usb" or connection_kind in query.connection_path
@@ -211,12 +267,34 @@ def resolve(
     support_statements: list[dict[str, Any]],
 ) -> dict[str, Any]:
     """Resolve one query without converting vendor support into observed compatibility."""
+    if _numeric_version(query.os_version) is None:
+        return {
+            "claim_state": "unknown",
+            "specificity": "none",
+            "is_relaxed": False,
+            "invalid_fields": ["os_version"],
+            "unchecked_dimensions": [],
+            "observation_ids": [],
+            "conditions": [],
+            "support": {"state": "unknown", "statement_ids": [], "conditions": []},
+        }
     matched_observations, specificity = _best_observations(observations, query)
     matched_support = _best_support(support_statements, query)
+    unchecked = {
+        "os_build": query.os_build is None,
+        "driver": query.driver_name is None or query.driver_version is None,
+        "software": query.software_name is None or query.software_version is None,
+        "firmware": query.firmware_version is None,
+        "usb_generation": query.usb_generation is None,
+        "connection_component_models": not query.connection_components
+        or any(not item.get("model") for item in query.connection_components),
+    }
     return {
         "claim_state": _claim_state(matched_observations),
         "specificity": specificity,
         "is_relaxed": specificity not in {"exact", "none"},
+        "invalid_fields": [],
+        "unchecked_dimensions": sorted(name for name, unknown in unchecked.items() if unknown),
         "observation_ids": sorted(item["observation_id"] for item in matched_observations),
         "conditions": _conditions(matched_observations),
         "support": {

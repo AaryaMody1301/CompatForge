@@ -37,6 +37,7 @@
       ],
       "properties": {
         "format_version": {"const": "1.0.0"},
+        "as_of": {"type": ["string", "null"], "format": "date-time"},
         "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
         "observation_count": {"type": "integer", "minimum": 0},
         "support_statement_count": {"type": "integer", "minimum": 0}
@@ -92,6 +93,10 @@
             "enum": ["exact", "host_relaxed", "os_version_relaxed", "none"]
           },
           "is_relaxed": {"type": "boolean"},
+          "unchecked_dimensions": {
+            "type": "array", "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1}
+          },
           "observation_ids": {
             "type": "array",
             "items": {"type": "string", "minLength": 1},
@@ -155,6 +160,7 @@
                 },
                 "source_url": {"type": "string", "format": "uri"},
                 "source_title": {"type": "string", "minLength": 1},
+                "evidence_date": {"type": "string", "format": "date-time"},
                 "limitations": {
                   "type": "array",
                   "items": {"type": "string", "minLength": 1},

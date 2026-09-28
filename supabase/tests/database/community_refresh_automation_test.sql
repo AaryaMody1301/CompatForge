@@ -2,7 +2,26 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(9);
+select plan(11);
+
+select pg_catalog.set_config(
+  'request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true
+);
+
+select is(
+  private.can_prepare_community_refresh(),
+  false,
+  'ordinary signed-in identity without membership is explicitly denied, not SQL NULL'
+);
+
+select throws_ok(
+  'select * from public.get_community_refresh_batch()',
+  'P0001',
+  'community refresh authorization required',
+  'ordinary signed-in identity cannot read accepted unpublished candidates'
+);
+
+select pg_catalog.set_config('request.jwt.claim.sub', '', true);
 
 select ok(
   to_regclass('private.refresh_automation_memberships') is not null,

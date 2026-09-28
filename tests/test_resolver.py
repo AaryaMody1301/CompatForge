@@ -1,3 +1,6 @@
+from dataclasses import replace
+
+import pytest
 from compatforge_pipeline.contracts import validate_document
 from compatforge_pipeline.resolver import CompatibilityQuery, resolve
 
@@ -131,3 +134,55 @@ def test_conditional_support_preserves_conditions() -> None:
     result = resolve(_query(), [], [_support("supported_with_conditions")])
     assert result["support"]["state"] == "supported_with_conditions"
     assert result["support"]["conditions"] == ["Install the vendor driver."]
+
+
+@pytest.mark.parametrize("field,value", [
+    ("os_build", "99999"),
+    ("driver_name", "Another driver"),
+    ("driver_version", "99.0"),
+    ("software_name", "Another application"),
+    ("software_version", "99.0"),
+    ("firmware_version", "99.0"),
+])
+def test_supplied_configuration_metadata_cannot_be_ignored(field: str, value: str) -> None:
+    observation = _observation("obs_metadata", "works")
+    observation["host"]["operating_system"]["build"] = "26100"
+    observation["driver"] = {"name": "FTDI VCP", "version": "2.1"}
+    observation["software"] = {"name": "avrdude", "version": "7.0"}
+    observation["firmware_version"] = "1.0"
+    query = _query()
+    result = resolve(replace(query, **{field: value}), [observation], [])
+    assert result["claim_state"] == "unknown"
+    assert result["specificity"] == "none"
+
+
+def test_minimum_version_treats_missing_trailing_zero_as_equal() -> None:
+    statement = _support()
+    statement["scope"]["operating_system"] = {
+        "family": "windows", "version_mode": "minimum", "minimum_version": "10.0",
+    }
+    assert resolve(_query(os_version="10"), [], [statement])["support"]["state"] == "supported"
+
+
+def test_query_preserves_path_component_identity_and_metadata() -> None:
+    query = CompatibilityQuery.from_mapping({
+        "device_id": "usb:1234:0001",
+        "host": {"manufacturer": "Acme", "model": "Host A", "architecture": "x86_64",
+                 "operating_system": {"family": "windows", "version": "11", "build": "26100"}},
+        "connection_path": [{"kind": "usb_hub", "manufacturer": "Acme", "model": "Hub 1"}],
+        "driver": {"name": "Driver A", "version": "1.0"},
+    })
+    assert query.os_build == "26100"
+    assert query.driver_name == "Driver A"
+    assert query.connection_components[0]["model"] == "Hub 1"
+
+
+def test_invalid_os_version_cannot_create_relaxed_positive_claim() -> None:
+    result = resolve(
+        _query(os_version="garbage"),
+        [_observation("obs_valid_version", "works", os_version="11")],
+        [_support()],
+    )
+    assert result["claim_state"] == "unknown"
+    assert result["support"]["state"] == "unknown"
+    assert result["invalid_fields"] == ["os_version"]

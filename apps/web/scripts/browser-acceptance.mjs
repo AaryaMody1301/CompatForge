@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -17,6 +17,7 @@ const browserCandidates = process.env.CHROME_BIN
   : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"];
 const fullCommitPattern = /^[0-9a-f]{40}$/;
 const localTarget = ["localhost", "127.0.0.1"].includes(new URL(baseUrl).hostname);
+const catalog = JSON.parse(readFileSync(path.resolve(process.cwd(), "../../data/catalog/usb-device-catalog.json"), "utf8"));
 const requiredSecurityHeaders = {
   "content-security-policy": ["base-uri 'self'", "frame-ancestors 'none'", "object-src 'none'"],
   "permissions-policy": ["camera=()", "microphone=()", "geolocation=()", "browsing-topics=()"],
@@ -143,7 +144,7 @@ const cases = [
       "Will this hardware actually work?",
       "Evidence-first compatibility",
       "Browse devices",
-      "20,537",
+      catalog.counts.devices.toLocaleString("en"),
       "property=\"og:title\"",
       "name=\"twitter:card\"",
       "rel=\"canonical\"",
@@ -157,7 +158,7 @@ const cases = [
       "Evidence-backed and curated developer hardware is shown first",
       "FTDI FT232 USB-Serial (UART) IC",
       "Saleae Logic Pro 8",
-      "usb.ids 2026.06.26",
+      `usb.ids ${catalog.source.version}`,
     ],
   },
   {
@@ -258,10 +259,17 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "architecture is outside the available checker options.",
+      "architecture is invalid or outside the available checker options.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
+  },
+  {
+    name: "checker-invalid-version",
+    pathname: "/check?device=usb%3A0403%3A6001&os=windows&version=garbage&architecture=arm64&connection=unspecified",
+    status: 200,
+    includes: ["Invalid configuration.", "OS version is invalid", "No compatibility claim was generated."],
+    excludes: ["<p class=\"eyebrow\">Result</p>"],
   },
   {
     name: "coverage",
@@ -368,7 +376,7 @@ try {
     { name: "robots", pathname: "/robots.txt", contentType: "text/plain", includes: ["Sitemap:"] },
     { name: "sitemap", pathname: "/sitemap.xml", contentType: "application/xml", includes: ["/devices/ftdi-ft232r"] },
     { name: "manifest", pathname: "/manifest.webmanifest", contentType: "application/manifest+json", includes: ["CompatForge"] },
-    { name: "favicon", pathname: "/favicon.ico", contentType: "image/x-icon", includes: [] },
+    { name: "favicon", pathname: "/favicon.ico", contentTypes: ["image/x-icon", "image/vnd.microsoft.icon"], includes: [] },
     { name: "icon", pathname: "/icon.svg", contentType: "image/svg+xml", includes: [] },
     { name: "open-graph-image", pathname: "/opengraph-image", contentType: "image/png", includes: [] },
     { name: "twitter-image", pathname: "/twitter-image", contentType: "image/png", includes: [] },
@@ -379,9 +387,9 @@ try {
       throw new Error(`${route.name}: expected HTTP 200, received ${response.status}`);
     }
     const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes(route.contentType)) {
+    if (!(route.contentTypes ?? [route.contentType]).some((type) => contentType.includes(type))) {
       throw new Error(
-        `${route.name}: expected content type containing ${route.contentType}, received ${contentType}`,
+        `${route.name}: expected content type ${JSON.stringify(route.contentTypes ?? [route.contentType])}, received ${contentType}`,
       );
     }
     const body = route.includes.length ? await response.text() : "";
@@ -390,6 +398,15 @@ try {
         throw new Error(`${route.name}: response did not contain ${JSON.stringify(expected)}`);
       }
     }
+  }
+
+  const suggestionsResponse = await fetch(`${baseUrl}/api/devices/search?q=FT232R`);
+  if (suggestionsResponse.status !== 200) {
+    throw new Error(`device suggestions returned HTTP ${suggestionsResponse.status}`);
+  }
+  const suggestions = await suggestionsResponse.json();
+  if (!suggestions.devices?.some((device) => device.id === "usb:0403:6001")) {
+    throw new Error("device suggestions did not include the reviewed FT232R identity");
   }
 
   screenshot("home-desktop", `${baseUrl}/`, 1440, 1000);

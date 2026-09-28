@@ -6,7 +6,8 @@ import { getCommunityFeatureState } from "@/lib/supabase/config";
 import { pageMetadata } from "@/lib/site";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-import { submitCommunityEvidence } from "../actions";
+import { SubmissionForm } from "./submission-form";
+import { DeviceSearchInput } from "@/app/check/device-search-input";
 
 export const metadata: Metadata = {
   ...pageMetadata(
@@ -97,20 +98,12 @@ export default async function NewSubmissionPage({ searchParams }: PageProps) {
       </section>
 
       <section>
-        {errorCode ? <div className="notice error-notice">{ERRORS[errorCode] ?? ERRORS.submit_failed}</div> : null}
-
-        <form action={submitCommunityEvidence} className="community-form">
+        <SubmissionForm initialError={errorCode ?? null} errors={ERRORS}>
           <fieldset className="form-section">
             <legend>1. Handoff and device</legend>
             <label>
               Device USB ID
-              <input
-                name="target_device_id"
-                required
-                maxLength={13}
-                pattern="usb:[0-9A-Fa-f]{4}:[0-9A-Fa-f]{4}"
-                placeholder="usb:0403:6001"
-              />
+              <DeviceSearchInput name="target_device_id" initialValue="" />
               <span className="field-help">
                 Use any identity from the <Link href="/devices">searchable USB catalog</Link>. Device
                 pages provide a canonical VID/PID you can paste here.
@@ -277,7 +270,7 @@ export default async function NewSubmissionPage({ searchParams }: PageProps) {
             <button className="button-primary" type="submit">Submit for review</button>
             <Link className="button" href="/submissions">Cancel</Link>
           </div>
-        </form>
+        </SubmissionForm>
       </section>
     </main>
   );

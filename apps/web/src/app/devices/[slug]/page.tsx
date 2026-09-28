@@ -149,7 +149,7 @@ export default async function DevicePage({ params }: { params: Promise<{ slug: s
                   <div>
                     <h3>{observation.host.manufacturer} {observation.host.model}</h3>
                     <p className="meta">
-                      {formatOsFamily(observation.host.operating_system.family)} {observation.host.operating_system.version} · {formatArchitecture(observation.host.architecture)} · {formatConnection(observation.connection_path[0].kind)}
+                      {formatOsFamily(observation.host.operating_system.family)} {observation.host.operating_system.version} · {formatArchitecture(observation.host.architecture)} · {observation.connection_path.map((part) => formatConnection(part.kind)).join(" → ")}
                     </p>
                   </div>
                   <span className={`badge badge-${observation.outcome}`}>

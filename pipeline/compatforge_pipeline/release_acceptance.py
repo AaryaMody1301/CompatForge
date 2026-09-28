@@ -14,12 +14,21 @@ from pathlib import Path
 from typing import Any
 
 _FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
-_RELEASE_TAG = re.compile(r"^v1\.0\.0(?:-rc\.[1-9][0-9]*)?$")
+_RELEASE_TAG = re.compile(
+    r"^(?:v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\."
+    r"(?:0|[1-9][0-9]*)(?:-rc\.[1-9][0-9]*)?"
+    r"|hw-cli-v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\."
+    r"(?:0|[1-9][0-9]*)(?:rc[1-9][0-9]*)?)$"
+)
 _API_VERSION = "2026-03-10"
 _DEFAULT_REPOSITORY = "AaryaMody1301/CompatForge"
 _DEFAULT_BRANCH = "main"
 _DEFAULT_PRODUCTION_URL = "https://compat-forge.vercel.app"
 _ACTIVE_ENFORCEMENT = frozenset({"active", "enabled", "always"})
+_REQUIRED_CHECKS = frozenset({
+    "Python contracts", "Next.js web", "Supabase migrations and RLS",
+    "Workflow security policy",
+})
 
 
 class ReleaseAcceptanceError(ValueError):
@@ -33,7 +42,9 @@ def _validate_commit(commit: str) -> None:
 
 def _validate_tag(tag: str) -> None:
     if not _RELEASE_TAG.fullmatch(tag):
-        raise ReleaseAcceptanceError("tag must be v1.0.0 or v1.0.0-rc.N")
+        raise ReleaseAcceptanceError(
+            "tag must be vMAJOR.MINOR.PATCH[-rc.N] or hw-cli-vMAJOR.MINOR.PATCH[rcN]"
+        )
 
 
 def _request(
@@ -142,6 +153,27 @@ def _ruleset_names(rulesets: list[dict[str, Any]]) -> list[str]:
     return sorted(str(item.get("name", "")) for item in rulesets)
 
 
+def _rule_types(rulesets: list[dict[str, Any]]) -> set[str]:
+    return {
+        rule["type"]
+        for ruleset in rulesets
+        for rule in ruleset.get("rules", [])
+        if isinstance(rule, dict) and isinstance(rule.get("type"), str)
+    }
+
+
+def _required_contexts(rulesets: list[dict[str, Any]]) -> set[str]:
+    return {
+        check["context"]
+        for ruleset in rulesets
+        for rule in ruleset.get("rules", [])
+        if isinstance(rule, dict) and rule.get("type") == "required_status_checks"
+        and isinstance(rule.get("parameters"), dict)
+        for check in rule["parameters"].get("required_status_checks", [])
+        if isinstance(check, dict) and isinstance(check.get("context"), str)
+    }
+
+
 def evaluate_acceptance(
     *,
     expected_commit: str,
@@ -184,8 +216,13 @@ def evaluate_acceptance(
     checks.append(
         {
             "name": "main_ruleset",
-            "passed": bool(main_rulesets),
-            "observed": _ruleset_names(main_rulesets),
+            "passed": bool(main_rulesets) and {
+                "pull_request", "non_fast_forward", "deletion", "required_status_checks"
+            }.issubset(_rule_types(main_rulesets))
+            and _REQUIRED_CHECKS.issubset(_required_contexts(main_rulesets)),
+            "observed": {"names": _ruleset_names(main_rulesets),
+                         "rules": sorted(_rule_types(main_rulesets)),
+                         "checks": sorted(_required_contexts(main_rulesets))},
         }
     )
 
@@ -198,8 +235,11 @@ def evaluate_acceptance(
     checks.append(
         {
             "name": "release_tag_ruleset",
-            "passed": bool(tag_rulesets),
-            "observed": _ruleset_names(tag_rulesets),
+            "passed": bool(tag_rulesets) and {"update", "deletion"}.issubset(
+                _rule_types(tag_rulesets)
+            ),
+            "observed": {"names": _ruleset_names(tag_rulesets),
+                         "rules": sorted(_rule_types(tag_rulesets))},
         }
     )
 

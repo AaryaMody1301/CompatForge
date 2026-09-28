@@ -13,12 +13,22 @@ BRANCH_RULESET = {
     "target": "branch",
     "enforcement": "active",
     "conditions": {"ref_name": {"include": ["~DEFAULT_BRANCH"], "exclude": []}},
+    "rules": [
+        {"type": "pull_request"}, {"type": "non_fast_forward"}, {"type": "deletion"},
+        {"type": "required_status_checks", "parameters": {"required_status_checks": [
+            {"context": name} for name in (
+                "Python contracts", "Next.js web", "Supabase migrations and RLS",
+                "Workflow security policy",
+            )
+        ]}},
+    ],
 }
 TAG_RULESET = {
     "name": "release tag protection",
     "target": "tag",
     "enforcement": "active",
     "conditions": {"ref_name": {"include": ["refs/tags/v*"], "exclude": []}},
+    "rules": [{"type": "update"}, {"type": "deletion"}],
 }
 
 
@@ -60,7 +70,7 @@ def test_release_acceptance_rejects_unprotected_main() -> None:
 def test_release_acceptance_requires_ruleset_for_main() -> None:
     report = _report(rulesets=[TAG_RULESET])
     assert report["passed"] is False
-    assert _check(report, "main_ruleset")["observed"] == []
+    assert _check(report, "main_ruleset")["observed"]["names"] == []
 
 
 def test_release_acceptance_requires_ruleset_for_exact_release_tag() -> None:
@@ -70,7 +80,45 @@ def test_release_acceptance_requires_ruleset_for_exact_release_tag() -> None:
     }
     report = _report(rulesets=[BRANCH_RULESET, unrelated_tag_ruleset])
     assert report["passed"] is False
-    assert _check(report, "release_tag_ruleset")["observed"] == []
+    assert _check(report, "release_tag_ruleset")["observed"]["names"] == []
+
+
+def test_empty_rulesets_do_not_pass_protection_gate() -> None:
+    report = _report(rulesets=[{**BRANCH_RULESET, "rules": []}, {**TAG_RULESET, "rules": []}])
+    assert report["passed"] is False
+    assert not _check(report, "main_ruleset")["passed"]
+    assert not _check(report, "release_tag_ruleset")["passed"]
+
+
+def test_partial_checks_do_not_satisfy_main_protection() -> None:
+    incomplete = {**BRANCH_RULESET, "rules": BRANCH_RULESET["rules"][:-1]}
+    assert not _check(_report(rulesets=[incomplete, TAG_RULESET]), "main_ruleset")["passed"]
+
+
+def test_patch_release_is_valid() -> None:
+    report = evaluate_acceptance(
+        expected_commit=COMMIT, release_tag="v1.0.1",
+        branch={"commit": {"sha": COMMIT}, "protected": True},
+        rulesets=[BRANCH_RULESET, TAG_RULESET], releases=[],
+        immutable_releases={"enabled": True},
+        production_headers={"x-compatforge-commit": COMMIT},
+    )
+    assert report["passed"] is True
+
+
+def test_hardware_cli_tag_requires_its_own_protected_ruleset() -> None:
+    hardware_tag = {**TAG_RULESET, "conditions": {
+        "ref_name": {"include": ["refs/tags/hw-cli-v*"], "exclude": []}
+    }}
+    kwargs = dict(
+        expected_commit=COMMIT, release_tag="hw-cli-v0.3.0rc1",
+        branch={"commit": {"sha": COMMIT}, "protected": True}, releases=[],
+        immutable_releases={"enabled": True},
+        production_headers={"x-compatforge-commit": COMMIT},
+    )
+    assert not _check(evaluate_acceptance(rulesets=[BRANCH_RULESET, TAG_RULESET], **kwargs),
+                      "release_tag_ruleset")["passed"]
+    assert evaluate_acceptance(rulesets=[BRANCH_RULESET, hardware_tag], **kwargs)["passed"]
 
 
 def test_release_acceptance_honors_ruleset_exclusions() -> None:
@@ -106,7 +154,7 @@ def test_release_acceptance_requires_exact_production_commit() -> None:
     assert _check(report, "production_commit")["observed"] == "b" * 40
 
 
-@pytest.mark.parametrize("tag", ["v1.0.0-rc.0", "v1.0.1", "1.0.0", "v1.0.0-beta.1"])
+@pytest.mark.parametrize("tag", ["v1.0.0-rc.0", "v01.0.1", "1.0.0", "v1.0.0-beta.1"])
 def test_release_acceptance_rejects_out_of_scope_tags(tag: str) -> None:
     with pytest.raises(ReleaseAcceptanceError, match="tag must be"):
         evaluate_acceptance(
