@@ -105,7 +105,7 @@ returns boolean
 language plpgsql
 immutable
 set search_path = ''
-as $$
+as $function$
 declare
   parts text[];
   host text;
@@ -139,7 +139,7 @@ begin
 
   return true;
 end;
-$$;
+$function$;
 
 revoke all on function private.community_https_reference_valid(text)
   from public, anon, authenticated;
