@@ -123,6 +123,10 @@ def _observation_matches(
         return False
     if not _metadata_matches(observation, query):
         return False
+    if query.connection_components and len(query.connection_components) != len(
+        observation["connection_path"]
+    ):
+        return False
     if query.connection_components and any(
         not _optional_matches(requested.get(field), actual.get(field))
         for requested, actual in zip(
@@ -285,9 +289,14 @@ def resolve(
         "driver": query.driver_name is None or query.driver_version is None,
         "software": query.software_name is None or query.software_version is None,
         "firmware": query.firmware_version is None,
-        "usb_generation": query.usb_generation is None,
-        "connection_component_models": not query.connection_components
-        or any(not item.get("model") for item in query.connection_components),
+        # The observation contract does not record negotiated USB generation,
+        # so even a supplied query value cannot verify this dimension.
+        "usb_generation": True,
+        "connection_component_identity": not query.connection_components
+        or any(
+            not item.get("manufacturer") or not item.get("model")
+            for item in query.connection_components
+        ),
     }
     return {
         "claim_state": _claim_state(matched_observations),

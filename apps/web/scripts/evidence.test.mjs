@@ -63,6 +63,42 @@ test("web resolver matches a two-hop path and reports unchecked dimensions", () 
   assert.ok(result.uncheckedDimensions.includes("driver version"));
 });
 
+test("USB generation is reported unchecked even when supplied to the observation query", () => {
+  const result = resolver().resolveCompatibility(query({ usbGeneration: "3.0" }));
+  assert.equal(result.claimState, "works");
+  assert.ok(result.uncheckedDimensions.includes("USB generation"));
+});
+
+test("web resolver checks supplied connection component identity per path step", () => {
+  const configuredObservation = {
+    ...observation,
+    connection_path: [
+      { kind: "usb_hub", manufacturer: "Acme", model: "Hub 1" },
+      { kind: "cable", manufacturer: "Belkin", model: "CBL-1" },
+    ],
+  };
+  const resolve = resolver([configuredObservation]);
+  const requested = {
+    connectionPathComponents: [
+      { manufacturer: "Acme", model: "Hub 1" },
+      { manufacturer: "Belkin", model: "CBL-1" },
+    ],
+  };
+  assert.equal(resolve.resolveCompatibility(query(requested)).claimState, "works");
+  assert.equal(resolve.resolveCompatibility(query({
+    ...requested,
+    connectionPathComponents: [
+      { manufacturer: "Acme", model: "Wrong hub" },
+      { manufacturer: "Belkin", model: "CBL-1" },
+    ],
+  })).claimState, "unknown");
+});
+
+test("web resolver reports connection component identity as unchecked when omitted", () => {
+  const result = resolver().resolveCompatibility(query());
+  assert.ok(result.uncheckedDimensions.includes("connection component identity"));
+});
+
 for (const [dimension, altered] of [
   ["osBuild", "99999"], ["driverName", "Other driver"], ["driverVersion", "99"],
   ["softwareName", "Other program"], ["softwareVersion", "99"],

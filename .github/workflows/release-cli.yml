@@ -98,6 +98,26 @@ jobs:
           "$BINARY" explain \
             --diagnostic data/fixtures/diagnostic_manifest.json \
             --output build/local-explanation.json
+
+      - name: Verify frozen schema format checks stay enabled
+        shell: bash
+        env:
+          BINARY: ${{ matrix.binary }}
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          diagnostic = json.loads(Path("data/fixtures/diagnostic_manifest.json").read_text())
+          diagnostic["generated_at"] = "not-a-date"
+          Path("build/invalid-format-diagnostic.json").write_text(json.dumps(diagnostic))
+          PY
+          if "$BINARY" explain \
+            --diagnostic build/invalid-format-diagnostic.json \
+            --output build/invalid-format-explanation.json; then
+            echo "Frozen CLI accepted a diagnostic with invalid date-time format." >&2
+            exit 1
+          fi
           if "$BINARY" prepare-contribution \
             --diagnostic data/fixtures/diagnostic_manifest.json \
             --explanation build/local-explanation.json \
@@ -179,6 +199,8 @@ jobs:
       - name: Verify effective branch, tag, check and immutability gates
         env:
           COMPATFORGE_RELEASE_ADMIN_TOKEN: ${{ secrets.COMPATFORGE_RELEASE_ADMIN_TOKEN }}
+          COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE: ${{ vars.COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE }}
+          COMPATFORGE_RELEASE_CREATION_ACTOR_ID: ${{ vars.COMPATFORGE_RELEASE_CREATION_ACTOR_ID }}
           PYTHONPATH: pipeline
         run: >-
           python -m compatforge_pipeline.release_acceptance

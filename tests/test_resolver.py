@@ -91,6 +91,14 @@ def test_exact_observation_resolves_working_claim() -> None:
     assert result["is_relaxed"] is False
 
 
+def test_usb_generation_remains_unchecked_without_observation_evidence() -> None:
+    query = replace(_query(), usb_generation="3.0")
+    result = resolve(query, [_observation("obs_usb_generation_unknown", "works")], [])
+
+    assert result["claim_state"] == "works"
+    assert "usb_generation" in result["unchecked_dimensions"]
+
+
 def test_failure_and_success_at_same_tier_are_conflicting() -> None:
     result = resolve(
         _query(),
@@ -175,6 +183,18 @@ def test_query_preserves_path_component_identity_and_metadata() -> None:
     assert query.os_build == "26100"
     assert query.driver_name == "Driver A"
     assert query.connection_components[0]["model"] == "Hub 1"
+
+
+def test_supplied_connection_component_identity_is_not_ignored() -> None:
+    query = replace(
+        _query(),
+        connection_components=({"kind": "direct_port", "model": "Dock Model"},),
+    )
+    result = resolve(query, [_observation("obs_component_model", "works")], [])
+
+    assert result["claim_state"] == "unknown"
+    assert result["specificity"] == "none"
+    assert "connection_component_identity" in result["unchecked_dimensions"]
 
 
 def test_invalid_os_version_cannot_create_relaxed_positive_claim() -> None:

@@ -102,6 +102,7 @@ export type CompatibilityQuery = {
   osVersion: string;
   connectionKind: ConnectionKind;
   connectionPath?: readonly ConnectionKind[];
+  connectionPathComponents?: readonly { manufacturer?: string; model?: string }[];
   hostManufacturer?: string;
   hostModel?: string;
   osBuild?: string;
@@ -209,6 +210,14 @@ function observationMatches(
     !== (query.connectionPath ?? [query.connectionKind]).join(">")) {
     return false;
   }
+  if (query.connectionPathComponents) {
+    if (query.connectionPathComponents.length !== observation.connection_path.length) return false;
+    if (query.connectionPathComponents.some((component, index) =>
+      !optionalMatches(component.manufacturer, observation.connection_path[index].manufacturer)
+      || !optionalMatches(component.model, observation.connection_path[index].model))) {
+      return false;
+    }
+  }
   if (!optionalMatches(query.osBuild, observation.host.operating_system.build)) return false;
   if (!optionalMatches(query.firmwareVersion, observation.firmware_version)) return false;
   if (!metadataMatches(observation, query)) return false;
@@ -283,7 +292,11 @@ export function resolveCompatibility(query: CompatibilityQuery) {
       !query.osBuild && "OS build", !query.driverName && "driver name",
       !query.driverVersion && "driver version", !query.softwareName && "software name",
       !query.softwareVersion && "software version", !query.firmwareVersion && "firmware",
-      !query.usbGeneration && "USB generation", "connection component models",
+      // Observation records currently do not capture negotiated USB generation.
+      "USB generation",
+      (!query.connectionPathComponents
+        || query.connectionPathComponents.some((component) => !component.manufacturer || !component.model))
+        && "connection component identity",
     ].filter((value): value is string => Boolean(value)),
   };
 }

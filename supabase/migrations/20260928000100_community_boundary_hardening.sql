@@ -83,6 +83,67 @@ $$;
 revoke all on function private.community_text_field_valid(jsonb,text[],integer)
   from public, anon, authenticated;
 
+create or replace function private.community_array_has_duplicates(document jsonb)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from pg_catalog.jsonb_array_elements(document) as item(value)
+    group by value
+    having pg_catalog.count(*) > 1
+  );
+$$;
+
+revoke all on function private.community_array_has_duplicates(jsonb)
+  from public, anon, authenticated;
+
+create or replace function private.community_https_reference_valid(reference text)
+returns boolean
+language plpgsql
+immutable
+set search_path = ''
+as $$
+declare
+  parts text[];
+  host text;
+  port text;
+  address inet;
+begin
+  if reference is null or pg_catalog.char_length(reference) > 2000 then
+    return false;
+  end if;
+
+  parts := pg_catalog.regexp_match(reference, $uri$^https://(\[[0-9A-Fa-f:.]+\]|(?:[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?)(?:\.(?:[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?))*)(?::([0-9]{1,5}))?(?:/[A-Z0-9._~!$&'()*+,;=:@%/-]*)?(?:\?[A-Z0-9._~!$&'()*+,;=:@%/?-]*)?(?:#[A-Z0-9._~!$&'()*+,;=:@%/?-]*)?$$uri$, 'i');
+  if parts is null or reference ~ '%($|[^0-9A-Fa-f]|[0-9A-Fa-f]$)' then
+    return false;
+  end if;
+
+  host := parts[1];
+  port := parts[2];
+  if port is not null and port::integer not between 1 and 65535 then
+    return false;
+  end if;
+  if host like '[%' then
+    begin
+      address := pg_catalog.substr(host, 2, pg_catalog.char_length(host) - 2)::inet;
+    exception when others then
+      return false;
+    end;
+    if pg_catalog.family(address) <> 6 then
+      return false;
+    end if;
+  end if;
+
+  return true;
+end;
+$$;
+
+revoke all on function private.community_https_reference_valid(text)
+  from public, anon, authenticated;
+
 create or replace function private.validate_community_submission_insert()
 returns trigger
 language plpgsql
@@ -166,6 +227,12 @@ begin
   then
     raise exception 'community submission exceeds contract limits';
   end if;
+  if private.community_array_has_duplicates(payload #> '{configuration,drivers}')
+    or private.community_array_has_duplicates(payload #> '{reproduction,conditions}')
+    or private.community_array_has_duplicates(payload #> '{reproduction,limitations}')
+    or private.community_array_has_duplicates(payload -> 'references') then
+    raise exception 'duplicate items in community submission';
+  end if;
   if not private.community_text_field_valid(payload, '{configuration,host,manufacturer}', 200)
     or not private.community_text_field_valid(payload, '{configuration,host,model}', 200)
     or not private.community_text_field_valid(payload, '{configuration,operating_system,build}', 100)
@@ -198,7 +265,7 @@ begin
   end loop;
   for item in select value from pg_catalog.jsonb_array_elements(payload -> 'references') loop
     if pg_catalog.jsonb_typeof(item) is distinct from 'string'
-      or (item #>> '{}') !~ '^https://[^[:space:]]+$'
+      or not private.community_https_reference_valid(item #>> '{}')
       or pg_catalog.char_length(item #>> '{}') > 2000 then
       raise exception 'invalid supporting reference';
     end if;
@@ -235,7 +302,8 @@ begin
   exception when others then
     raise exception 'invalid community submission timestamp';
   end;
-  if observed_at > pg_catalog.now() or prepared_at > pg_catalog.now() then
+  if observed_at > pg_catalog.now() + interval '5 minutes'
+    or prepared_at > pg_catalog.now() + interval '5 minutes' then
     raise exception 'community submission timestamp cannot be in the future';
   end if;
   return new;
@@ -266,7 +334,7 @@ begin
   exception when others then
     raise exception 'candidate observation timestamp is invalid';
   end;
-  if observed_at > pg_catalog.now() then
+  if observed_at > pg_catalog.now() + interval '5 minutes' then
     raise exception 'candidate observation timestamp cannot be in the future';
   end if;
   return new;

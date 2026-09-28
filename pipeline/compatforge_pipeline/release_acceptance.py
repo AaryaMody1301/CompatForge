@@ -29,6 +29,7 @@ _REQUIRED_CHECKS = frozenset({
     "Python contracts", "Next.js web", "Supabase migrations and RLS",
     "Workflow security policy",
 })
+_RELEASE_CREATION_ACTOR_TYPES = frozenset({"Integration", "Team", "User"})
 
 
 class ReleaseAcceptanceError(ValueError):
@@ -174,6 +175,72 @@ def _required_contexts(rulesets: list[dict[str, Any]]) -> set[str]:
     }
 
 
+def _bypass_actors(ruleset: dict[str, Any]) -> list[Any]:
+    actors = ruleset.get("bypass_actors", [])
+    if not isinstance(actors, list):
+        return [{"invalid": True}]
+    return actors
+
+
+def _release_tag_policy(
+    rulesets: list[dict[str, Any]], expected_actor: dict[str, Any] | None,
+) -> tuple[bool, dict[str, Any]]:
+    creation_rulesets = [item for item in rulesets if "creation" in _rule_types([item])]
+    protected_rulesets = [
+        item for item in rulesets
+        if _rule_types([item]) & {"update", "deletion"}
+    ]
+    actor_id = expected_actor.get("actor_id") if expected_actor is not None else None
+    actor_type = expected_actor.get("actor_type") if expected_actor is not None else None
+    expected_actor_is_valid = (
+        type(actor_id) is int
+        and actor_id > 0
+        and isinstance(actor_type, str)
+        and actor_type in _RELEASE_CREATION_ACTOR_TYPES
+    )
+    creation_actor = (
+        {
+            "actor_id": actor_id,
+            "actor_type": actor_type,
+            "bypass_mode": "always",
+        }
+        if expected_actor_is_valid
+        else None
+    )
+    creation_is_restricted = (
+        bool(creation_rulesets)
+        and creation_actor is not None
+        and all(
+            _rule_types([ruleset]) == {"creation"}
+            and _bypass_actors(ruleset) == [creation_actor]
+            for ruleset in creation_rulesets
+        )
+    )
+    protected_types = _rule_types(
+        [ruleset for ruleset in protected_rulesets if not _bypass_actors(ruleset)]
+    )
+    update_delete_are_protected = (
+        {"update", "deletion"}.issubset(protected_types)
+        and all(not _bypass_actors(ruleset) for ruleset in protected_rulesets)
+    )
+    passed = creation_is_restricted and update_delete_are_protected
+    observed = {
+        "creation_rulesets": [
+            {"name": item.get("name", ""), "bypass_actors": _bypass_actors(item)}
+            for item in creation_rulesets
+        ],
+        "protected_rulesets": [
+            {"name": item.get("name", ""), "rules": sorted(_rule_types([item])),
+             "bypass_actors": _bypass_actors(item)}
+            for item in protected_rulesets
+        ],
+        "expected_creation_actor": creation_actor,
+        "creation_restricted_to_expected_actor": creation_is_restricted,
+        "updates_and_deletion_have_no_bypass": update_delete_are_protected,
+    }
+    return passed, observed
+
+
 def evaluate_acceptance(
     *,
     expected_commit: str,
@@ -183,6 +250,7 @@ def evaluate_acceptance(
     releases: Any,
     immutable_releases: dict[str, Any],
     production_headers: dict[str, str],
+    release_creation_actor: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Return a bounded report over repository, release, and production state."""
 
@@ -219,10 +287,15 @@ def evaluate_acceptance(
             "passed": bool(main_rulesets) and {
                 "pull_request", "non_fast_forward", "deletion", "required_status_checks"
             }.issubset(_rule_types(main_rulesets))
-            and _REQUIRED_CHECKS.issubset(_required_contexts(main_rulesets)),
+            and _REQUIRED_CHECKS.issubset(_required_contexts(main_rulesets))
+            and all(not _bypass_actors(item) for item in main_rulesets),
             "observed": {"names": _ruleset_names(main_rulesets),
                          "rules": sorted(_rule_types(main_rulesets)),
-                         "checks": sorted(_required_contexts(main_rulesets))},
+                         "checks": sorted(_required_contexts(main_rulesets)),
+                         "bypass_actors": {
+                             str(item.get("name", "")): _bypass_actors(item)
+                             for item in main_rulesets
+                         }},
         }
     )
 
@@ -232,14 +305,15 @@ def evaluate_acceptance(
         for item in active_rulesets
         if _ruleset_applies(item, target="tag", ref=tag_ref)
     ]
+    tag_policy_passed, tag_policy_observed = _release_tag_policy(
+        tag_rulesets, release_creation_actor
+    )
     checks.append(
         {
             "name": "release_tag_ruleset",
-            "passed": bool(tag_rulesets) and {"update", "deletion"}.issubset(
-                _rule_types(tag_rulesets)
-            ),
+            "passed": bool(tag_rulesets) and tag_policy_passed,
             "observed": {"names": _ruleset_names(tag_rulesets),
-                         "rules": sorted(_rule_types(tag_rulesets))},
+                         "rules": sorted(_rule_types(tag_rulesets)), **tag_policy_observed},
         }
     )
 
@@ -312,6 +386,7 @@ def inspect_live_state(
     expected_commit: str,
     release_tag: str,
     github_token: str,
+    release_creation_actor: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Fetch live GitHub/Vercel state and evaluate release readiness."""
 
@@ -335,6 +410,7 @@ def inspect_live_state(
         releases=releases,
         immutable_releases=immutable_releases,
         production_headers=production_headers,
+        release_creation_actor=release_creation_actor,
     )
 
 
@@ -390,6 +466,16 @@ def main() -> int:
         )
         print(message, file=sys.stderr)
         return 1
+    actor_type = os.environ.get("COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE", "").strip()
+    actor_id_value = os.environ.get("COMPATFORGE_RELEASE_CREATION_ACTOR_ID", "").strip()
+    release_creation_actor: dict[str, Any] | None = None
+    if actor_type and actor_id_value:
+        try:
+            actor_id = int(actor_id_value)
+        except ValueError:
+            actor_id = 0
+        if actor_id > 0:
+            release_creation_actor = {"actor_type": actor_type, "actor_id": actor_id}
     try:
         report = inspect_live_state(
             repository=args.repository,
@@ -398,6 +484,7 @@ def main() -> int:
             expected_commit=args.commit,
             release_tag=args.tag,
             github_token=token,
+            release_creation_actor=release_creation_actor,
         )
         _write_report(report, args.output)
         print(render_markdown(report))

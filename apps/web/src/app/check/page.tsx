@@ -37,6 +37,20 @@ function member<T extends readonly string[]>(values: T, candidate: string): T[nu
   return values.includes(candidate as T[number]) ? (candidate as T[number]) : null;
 }
 
+function pathDimension(
+  raw: string,
+  componentCount: number,
+  maximumLength: number,
+): (string | undefined)[] | null | undefined {
+  if (!raw) return undefined;
+  const values = raw.split(">").map((item) => item.trim());
+  if (
+    values.length !== componentCount
+    || values.some((item) => item.length > maximumLength)
+  ) return null;
+  return values.map((item) => item || undefined);
+}
+
 export default async function CheckPage({ searchParams }: Props) {
   const params = await searchParams;
   const rawDeviceId = value(params, "device");
@@ -46,6 +60,8 @@ export default async function CheckPage({ searchParams }: Props) {
   const rawOsVersion = value(params, "version");
   const rawPath = value(params, "path");
   const connectionPath = rawPath ? rawPath.split(">").map((item) => item.trim()) : [];
+  const rawComponentManufacturers = value(params, "component_manufacturers");
+  const rawComponentModels = value(params, "component_models");
   const invalidPath = Boolean(rawPath) && (
     connectionPath.length > 8 || connectionPath.some((item) => !member(connectionKinds, item))
   );
@@ -63,6 +79,12 @@ export default async function CheckPage({ searchParams }: Props) {
   const requestedConnectionKind = rawConnectionKind
     ? member(connectionKinds, rawConnectionKind)
     : null;
+  const componentCount = rawPath ? connectionPath.length : 1;
+  const componentManufacturers = pathDimension(rawComponentManufacturers, componentCount, 120);
+  const componentModels = pathDimension(rawComponentModels, componentCount, 160);
+  const hasComponentQuery = Boolean(rawComponentManufacturers || rawComponentModels);
+  const invalidComponentQuery = hasComponentQuery
+    && (componentManufacturers === null || componentModels === null);
 
   const defaultDevice = getDeviceById("usb:0403:6001") ?? devices[0];
   const device = requestedDevice ?? defaultDevice;
@@ -82,6 +104,7 @@ export default async function CheckPage({ searchParams }: Props) {
     rawOsFamily && !requestedOsFamily ? "operating system" : null,
     rawConnectionKind && !requestedConnectionKind ? "connection" : null,
     invalidPath ? "connection path" : null,
+    invalidComponentQuery ? "connection component details" : null,
     rawOsVersion && !/^\d+(?:\.\d+)*$/.test(rawOsVersion.trim()) ? "OS version" : null,
     usbGeneration && !["1.1", "2.0", "3.0", "3.1", "3.2", "4"].includes(usbGeneration) ? "USB generation" : null,
   ].filter((field): field is string => field !== null);
@@ -95,6 +118,12 @@ export default async function CheckPage({ searchParams }: Props) {
         osVersion,
         connectionKind,
         connectionPath: rawPath ? connectionPath as ConnectionKind[] : undefined,
+        connectionPathComponents: hasComponentQuery && !invalidComponentQuery
+          ? Array.from({ length: componentCount }, (_, index) => ({
+              manufacturer: componentManufacturers?.[index],
+              model: componentModels?.[index],
+            }))
+          : undefined,
         hostManufacturer: hostManufacturer || undefined,
         hostModel: hostModel || undefined,
         osBuild: osBuild || undefined,
@@ -155,6 +184,26 @@ export default async function CheckPage({ searchParams }: Props) {
             Ordered connection path <span className="optional">optional</span>
             <input name="path" defaultValue={rawPath} placeholder="direct_port>usb_hub" maxLength={120} />
             <span className="field-help">If supplied, this replaces the single connection choice above. Separate components with &gt;.</span>
+          </label>
+          <label>
+            Connection component manufacturers <span className="optional">optional</span>
+            <input
+              name="component_manufacturers"
+              defaultValue={rawComponentManufacturers}
+              maxLength={967}
+              placeholder="one per path step, separated by &gt;"
+            />
+            <span className="field-help">Leave a step blank when unknown; values must align with the ordered path.</span>
+          </label>
+          <label>
+            Connection component models <span className="optional">optional</span>
+            <input
+              name="component_models"
+              defaultValue={rawComponentModels}
+              maxLength={1287}
+              placeholder="e.g. &gt;Powered Hub 7&gt;USB-C cable"
+            />
+            <span className="field-help">For a multi-step path, separate model names with &gt; and leave unknown steps empty.</span>
           </label>
           <label>OS build <span className="optional">optional</span><input name="os_build" defaultValue={osBuild} maxLength={80} /></label>
           <label>Driver name <span className="optional">optional</span><input name="driver_name" defaultValue={driverName} maxLength={160} /></label>

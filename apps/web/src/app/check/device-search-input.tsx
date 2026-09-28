@@ -30,7 +30,7 @@ export function DeviceSearchInput({ name, initialValue }: { name: string; initia
     <>
       <input
         name={name}
-        value={query}
+        defaultValue={initialValue}
         onChange={(event) => {
           setQuery(event.target.value);
           if (event.target.value.trim().length < 2) setDevices([]);
