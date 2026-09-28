@@ -1,12 +1,15 @@
 import hashlib
 import os
+import runpy
 import tarfile
 import zipfile
 from pathlib import Path
 
 import pytest
 
-from tools.package_cli_release import package_release
+package_release = runpy.run_path(
+    str(Path(__file__).resolve().parents[1] / "tools" / "package_cli_release.py")
+)["package_release"]
 
 
 @pytest.mark.parametrize("extension", ["zip", "tar.gz"])
