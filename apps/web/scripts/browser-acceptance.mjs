@@ -308,7 +308,14 @@ let failure = null;
 try {
   for (const testCase of cases) {
     const url = `${baseUrl}${testCase.pathname}`;
-    const response = await fetch(url, { redirect: "manual" });
+    let response;
+    try {
+      response = await fetch(url, { redirect: "manual" });
+    } catch (error) {
+      const cause = error instanceof Error && error.cause instanceof Error
+        ? `: ${error.cause.message}` : "";
+      throw new Error(`${testCase.name}: could not fetch ${url}${cause}`);
+    }
     if (response.status !== testCase.status) {
       throw new Error(
         `${testCase.name}: expected HTTP ${testCase.status}, received ${response.status}`,

@@ -224,19 +224,21 @@ jobs:
           COMPATFORGE_BUILD_COMMIT: ${{ github.sha }}
         run: npm run build
 
-      - name: Start production server
-        shell: bash
-        run: |
-          mkdir -p build/browser-acceptance
-          nohup npm run start -- --hostname 127.0.0.1 --port 3100 \
-            > build/browser-acceptance/server.log 2>&1 &
-          echo $! > build/browser-acceptance/server.pid
-
       - name: Browser acceptance
+        shell: bash
         env:
           COMPATFORGE_BROWSER_BASE_URL: http://127.0.0.1:3100
           COMPATFORGE_EXPECTED_COMMIT: ${{ github.sha }}
-        run: node scripts/browser-acceptance.mjs
+        run: |
+          mkdir -p build/browser-acceptance
+          ./node_modules/.bin/next start --hostname 127.0.0.1 --port 3100 \
+            > build/browser-acceptance/server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          if ! node scripts/browser-acceptance.mjs; then
+            cat build/browser-acceptance/server.log
+            exit 1
+          fi
 
       - name: Add browser summary
         if: always()

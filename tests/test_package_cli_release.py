@@ -20,6 +20,7 @@ def test_cli_release_archive_is_independent_of_input_mtime(
     binary.write_bytes(b"deterministic executable")
     first = package_release(binary, f"first.{extension}", tmp_path / "output")
     before = hashlib.sha256(first.read_bytes()).hexdigest()
+    assert (tmp_path / "output" / "stage" / binary.name).read_bytes() == binary.read_bytes()
 
     os.utime(binary, (1234567890, 1234567890))
     second = package_release(binary, f"second.{extension}", tmp_path / "output")

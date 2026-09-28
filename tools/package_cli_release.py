@@ -29,6 +29,21 @@ def package_release(binary: Path, asset_name: str, output_dir: Path) -> Path:
     if any(path.is_symlink() or not path.is_file() for path in sources):
         raise ValueError("CLI release inputs must be ordinary files")
 
+    # The SBOM workflow scans the exact release inputs from this directory.
+    # Never remove a pre-existing directory or follow a staged symlink.
+    stage = output_dir / "stage"
+    if stage.is_symlink() or (stage.exists() and not stage.is_dir()):
+        raise ValueError("CLI release staging path must be a directory")
+    stage.mkdir(exist_ok=True)
+    expected = {path.name for path in sources}
+    if any(path.name not in expected or path.is_symlink() or not path.is_file()
+           for path in stage.iterdir()):
+        raise ValueError("CLI release staging directory contains unexpected files")
+    for path in sources:
+        staged = stage / path.name
+        staged.write_bytes(path.read_bytes())
+        staged.chmod(0o755 if path == binary else 0o644)
+
     archive = output_dir / asset_name
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as handle:
