@@ -51,7 +51,7 @@ async function waitForServer() {
   let lastError = "no response";
   for (let attempt = 0; attempt < 40; attempt += 1) {
     try {
-      const response = await fetch(`${baseUrl}/`, { redirect: "manual" });
+      const response = await fetchFresh(`${baseUrl}/`);
       if (response.status >= 200 && response.status < 500) return;
       lastError = `HTTP ${response.status}`;
     } catch (error) {
@@ -60,6 +60,20 @@ async function waitForServer() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`Browser acceptance target did not become reachable: ${lastError}`);
+}
+
+async function fetchFresh(url) {
+  // Chrome DOM capture can outlast the server's idle keep-alive window.
+  // Use a new connection and retry one transport-only failure for safe GETs.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await fetch(url, { redirect: "manual", headers: { Connection: "close" } });
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  }
+  throw new Error(`could not fetch ${url}`);
 }
 
 function dumpDom(url) {
@@ -310,7 +324,7 @@ try {
     const url = `${baseUrl}${testCase.pathname}`;
     let response;
     try {
-      response = await fetch(url, { redirect: "manual" });
+      response = await fetchFresh(url);
     } catch (error) {
       const cause = error instanceof Error && error.cause instanceof Error
         ? `: ${error.cause.message}` : "";
@@ -389,7 +403,7 @@ try {
     { name: "twitter-image", pathname: "/twitter-image", contentType: "image/png", includes: [] },
   ];
   for (const route of metadataRoutes) {
-    const response = await fetch(`${baseUrl}${route.pathname}`, { redirect: "manual" });
+    const response = await fetchFresh(`${baseUrl}${route.pathname}`);
     if (response.status !== 200) {
       throw new Error(`${route.name}: expected HTTP 200, received ${response.status}`);
     }
@@ -407,7 +421,7 @@ try {
     }
   }
 
-  const suggestionsResponse = await fetch(`${baseUrl}/api/devices/search?q=FT232R`);
+  const suggestionsResponse = await fetchFresh(`${baseUrl}/api/devices/search?q=FT232R`);
   if (suggestionsResponse.status !== 200) {
     throw new Error(`device suggestions returned HTTP ${suggestionsResponse.status}`);
   }
