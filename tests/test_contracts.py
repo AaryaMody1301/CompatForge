@@ -49,8 +49,11 @@ def test_observation_rejects_invalid_date_time_formats(field: str, value: str) -
         validate_document(document)
 
 
-@pytest.mark.parametrize("value", ["https://%", "https://", "https://bad host.example/path"])
-def test_observation_rejects_malformed_uri_formats(value: str) -> None:
+@pytest.mark.parametrize("value", [
+    "https://%", "https://", "https:///path", "https://?query", "https://#fragment",
+    "https://bad host.example/path",
+])
+def test_observation_rejects_malformed_source_urls(value: str) -> None:
     document = load(ROOT / "data" / "fixtures" / "observation.synthetic.json")
     document["evidence"]["source_url"] = value
 

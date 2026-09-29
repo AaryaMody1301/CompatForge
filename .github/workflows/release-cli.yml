@@ -84,6 +84,7 @@ jobs:
             --name compatforge-hw \
             --paths pipeline \
             --add-data "pipeline/compatforge_pipeline/resources:compatforge_pipeline/resources" \
+            --collect-data rfc3987_syntax \
             --copy-metadata compatforge-hw-pipeline \
             tools/compatforge_hw_entry.py
 
