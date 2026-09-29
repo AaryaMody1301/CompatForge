@@ -33,12 +33,12 @@ This keeps two different questions separate:
 
 The resolver checks observation evidence in this order:
 
-1. `exact` - device, host model, architecture, OS family/version, and connection path match.
+1. `exact` - device, host model, architecture, OS family/version, and ordered connection kinds match; supplied OS build, driver, software, firmware, and component identities must also match evidence metadata.
 2. `host_relaxed` - host manufacturer/model may differ; architecture, OS family/version, and connection path must still match.
 3. `os_version_relaxed` - host and OS version may differ; architecture, OS family, and connection path must still match.
 4. `none` - no observation was found.
 
-The resolver never relaxes CPU architecture, OS family, or connection path in Phase 3A. A relaxed result always sets `is_relaxed: true` and returns the exact evidence IDs used.
+The resolver never relaxes CPU architecture, OS family, connection path, or user-supplied configuration metadata. A relaxed result always sets `is_relaxed: true` and returns the exact evidence IDs used. `exact` means exact on supplied and represented dimensions, not proof about omitted ones; `unchecked_dimensions` lists missing query details. The web checker displays limitations and dated evidence with each result.
 
 ## Conflict rule
 
@@ -46,7 +46,7 @@ At the best available specificity tier, a mixture of successful (`works` or `wor
 
 ## Support-statement matching
 
-Support statements are matched by device ID, architecture, OS family/version rule, and connection scope. The most specific matching statements win. Support facts remain separate from observations even when they are from official vendor documentation.
+Support statements are matched by device ID, architecture, OS family/version rule, connection scope, supplied driver/software metadata, and any known USB-generation constraint. Unknown USB generation does not prove the requirement was met; the statement remains visible with its minimum and must be checked before relying on support. The most specific matching statements win. Support facts remain separate from observations even when they are from official vendor documentation.
 
 ## CLI example
 

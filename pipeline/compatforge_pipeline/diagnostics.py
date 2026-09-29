@@ -174,6 +174,8 @@ $os = Get-CimInstance Win32_OperatingSystem
                 os_name = caption
             if "Windows 11" in caption:
                 os_version = "11"
+            elif "Windows 10" in caption:
+                os_version = "10"
             elif raw_version:
                 os_version = raw_version
             if build:
@@ -328,14 +330,14 @@ def _collect_windows_target(vid: str, pid: str) -> tuple[list[dict[str, Any]], i
     script = r"""
 $ErrorActionPreference = 'Stop'
 $vid = '__VID__'
-$pid = '__PID__'
+$usbProductId = '__PID__'
 $results = @()
 Get-PnpDevice -PresentOnly | ForEach-Object {
   $instance = [string]$_.InstanceId
   if ($instance -match '^USB\\VID_([0-9A-Fa-f]{4})&PID_([0-9A-Fa-f]{4})') {
     $foundVid = $Matches[1].ToUpperInvariant()
     $foundPid = $Matches[2].ToUpperInvariant()
-    if ($foundVid -eq $vid -and $foundPid -eq $pid) {
+    if ($foundVid -eq $vid -and $foundPid -eq $usbProductId) {
       $driverVersion = ''
       $driverProvider = ''
       $driverName = ''

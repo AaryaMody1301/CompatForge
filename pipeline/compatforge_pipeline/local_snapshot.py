@@ -58,14 +58,24 @@ def _project_observation(record: dict[str, Any]) -> dict[str, Any]:
         "observation_id": record["observation_id"],
         "device_id": record["device_id"],
         "host": record["host"],
-        "connection_path": [{"kind": item["kind"]} for item in record["connection_path"]],
+        "connection_path": [
+            {key: item[key] for key in ("kind", "manufacturer", "model") if key in item}
+            for item in record["connection_path"]
+        ],
         "outcome": record["outcome"],
+        "observed_at": record["observed_at"],
+        "recorded_at": record["recorded_at"],
         "conditions": sorted(set(record.get("conditions", []))),
         "evidence": {
             "source_type": record["evidence"]["source_type"],
             "sources": _normalized_sources(record["evidence"]),
         },
         "limitations": sorted(set(record.get("limitations", []))),
+        **{
+            key: record[key]
+            for key in ("driver", "software", "firmware_version")
+            if key in record
+        },
     }
 
 
@@ -75,6 +85,8 @@ def _project_support(record: dict[str, Any]) -> dict[str, Any]:
         "device_id": record["device_id"],
         "scope": record["scope"],
         "support_status": record["support_status"],
+        "reviewed_at": record["reviewed_at"],
+        "recorded_at": record["recorded_at"],
         "conditions": sorted(set(record.get("conditions", []))),
         "evidence": {
             "source_type": record["evidence"]["source_type"],
@@ -103,6 +115,9 @@ def build_snapshot(
     )
     snapshot = {
         "format_version": _FORMAT_VERSION,
+        "as_of": max(
+            (item["recorded_at"] for item in [*observations, *support]), default=None
+        ),
         "observation_count": len(observations),
         "support_statement_count": len(support),
         "observations": observations,
@@ -119,6 +134,8 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
         raise LocalSnapshotError("local snapshot must be a JSON object")
     if snapshot.get("format_version") != _FORMAT_VERSION:
         raise LocalSnapshotError("unsupported local snapshot format_version")
+    if snapshot.get("as_of") is not None and not isinstance(snapshot["as_of"], str):
+        raise LocalSnapshotError("local snapshot as_of must be an evidence timestamp")
 
     observations = snapshot.get("observations")
     support = snapshot.get("support_statements")
@@ -142,6 +159,8 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
             "conditions",
             "evidence",
             "limitations",
+            "observed_at",
+            "recorded_at",
         }
         if not required.issubset(record):
             raise LocalSnapshotError("local snapshot observation is missing required fields")
@@ -159,6 +178,8 @@ def validate_snapshot(snapshot: dict[str, Any]) -> None:
             "conditions",
             "evidence",
             "limitations",
+            "reviewed_at",
+            "recorded_at",
         }
         if not required.issubset(record):
             raise LocalSnapshotError("local snapshot support statement is missing required fields")
@@ -249,6 +270,7 @@ def main() -> int:
             json.dumps(
                 {
                     "format_version": snapshot["format_version"],
+                    "as_of": snapshot["as_of"],
                     "observation_count": snapshot["observation_count"],
                     "support_statement_count": snapshot["support_statement_count"],
                     "sha256": snapshot_sha256(snapshot),

@@ -34,22 +34,28 @@ The token is used only to read `GET /repos/AaryaMody1301/CompatForge/immutable-r
 Create an active branch ruleset for the default branch. At minimum:
 
 - require changes through pull requests;
-- require the existing CI/security/database/release checks before merge;
+- require the always-reporting Python contracts, Next.js web, Supabase migrations and RLS, and Workflow security policy checks before merge;
 - block force pushes;
-- block branch deletion.
+- block branch deletion;
+- configure no bypass actors on rulesets applying to `main`.
 
-After configuration, `GET /repos/AaryaMody1301/CompatForge/branches/main` must report `protected: true` and the repository rulesets endpoint must contain at least one active ruleset.
+After configuration, `GET /repos/AaryaMody1301/CompatForge/branches/main` must report `protected: true`. The preflight inspects the effective active ruleset contents: PR-only changes, required checks with those four contexts, blocked force pushes, and blocked deletion. An empty ruleset does not count as protection.
 
 ### Protect release tags
 
-Create an active tag ruleset covering both release families:
+Create active tag rulesets covering both release families:
 
 ```text
 refs/tags/v*
 refs/tags/hw-cli-v*
 ```
 
-Prevent release-tag updates and deletion. Restrict tag creation to the intended release actor/bypass path. Published immutable releases additionally lock their associated tag and release assets, but the tag ruleset protects the interval before publication.
+Use separate rulesets so the creation actor cannot bypass post-creation protections:
+
+- a creation-only ruleset with exactly one bypass actor (the chosen GitHub user, team, or app);
+- a second ruleset requiring both `update` and `deletion` restrictions, with no bypass actors.
+
+Set repository Actions variables `COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE` (`User`, `Team`, or `Integration`) and `COMPATFORGE_RELEASE_CREATION_ACTOR_ID` to the intended actor's numeric GitHub ID. The live acceptance validator checks the configured actor against the creation ruleset and rejects extra bypass actors, a missing creation rule, or any bypass on tag update/deletion. Published immutable releases additionally lock their associated tag and release assets, but the tag rulesets protect the interval before publication.
 
 ## 2. Production commit provenance
 
@@ -75,7 +81,7 @@ The workflow fails unless all of these conditions are simultaneously true:
 
 1. the dispatch commit is the current `main` commit;
 2. `main` is protected;
-3. at least one active repository ruleset exists;
+3. active branch and matching tag rulesets contain the required protection rules (not just names or counts), with `main` non-bypassable and tag creation limited to the configured actor;
 4. the requested release tag has not already been used by a GitHub Release;
 5. GitHub reports immutable releases enabled through the administration-read API;
 6. `https://compat-forge.vercel.app/` returns `X-CompatForge-Commit` equal to the exact `main` SHA.

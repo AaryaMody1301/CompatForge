@@ -2,7 +2,51 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(14);
+select plan(20);
+
+select ok(
+  private.community_array_has_duplicates('["same", "same"]'::jsonb),
+  'community array contract detects duplicate scalar items'
+);
+
+select ok(
+  private.community_array_has_duplicates('[{"name":"driver"}, {"name":"driver"}]'::jsonb),
+  'community array contract detects duplicate object items'
+);
+
+select ok(
+  not private.community_array_has_duplicates('["one", "two"]'::jsonb),
+  'community array contract accepts unique items'
+);
+
+select ok(
+  private.community_https_reference_valid('https://example.com/path?q=1')
+    and private.community_https_reference_valid('https://[2001:db8::1]/path')
+    and not private.community_https_reference_valid('https://%')
+    and not private.community_https_reference_valid('https://bad host.example/path')
+    and not private.community_https_reference_valid('https://example.com/%GG'),
+  'community reference validator accepts valid HTTPS and rejects malformed authorities and escapes'
+);
+
+select ok(
+  pg_catalog.strpos(
+    pg_get_functiondef('private.validate_community_submission_insert()'::regprocedure),
+    'interval ''5 minutes'''
+  ) > 0
+    and pg_catalog.strpos(
+      pg_get_functiondef('private.validate_community_candidate_insert()'::regprocedure),
+      'interval ''5 minutes'''
+    ) > 0,
+  'submission and candidate triggers share the web five-minute future-time tolerance'
+);
+
+select ok(
+  pg_catalog.strpos(
+    pg_get_functiondef('private.enforce_submission_rate_limit()'::regprocedure),
+    'for update'
+  ) > 0,
+  'per-user row lock serializes concurrent rolling-window submission counts'
+);
 
 select ok(
   exists (

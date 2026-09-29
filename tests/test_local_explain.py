@@ -62,13 +62,14 @@ def test_local_explanation_reuses_packaged_resolver_evidence() -> None:
 
     result = explanation["results"][0]
     assert result["connection_path"] == "unspecified"
-    assert result["claim_state"] == "works_with_conditions"
-    assert result["specificity"] == "exact"
-    assert result["observation_ids"] == ["obs_avrdude_ft232r_win11arm64"]
+    assert result["claim_state"] == "unknown"
+    assert result["specificity"] == "none"
+    assert result["observation_ids"] == []
     assert result["support"]["state"] == "supported_with_conditions"
     assert result["support"]["statement_ids"] == ["sup_ftdi_ft232r_win11_arm64"]
-    assert any("avrdude" in item["source_url"] for item in result["evidence_sources"])
     assert any("ftdichip.com" in item["source_url"] for item in result["evidence_sources"])
+    assert explanation["snapshot"]["as_of"]
+    assert result["evidence_sources"][0]["evidence_date"]
 
 
 def test_local_explanation_does_not_invent_result_for_absent_target() -> None:

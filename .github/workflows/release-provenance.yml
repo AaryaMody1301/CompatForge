@@ -165,6 +165,8 @@ jobs:
       - name: Require release-ready repository and production state
         env:
           COMPATFORGE_RELEASE_ADMIN_TOKEN: ${{ secrets.COMPATFORGE_RELEASE_ADMIN_TOKEN }}
+          COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE: ${{ vars.COMPATFORGE_RELEASE_CREATION_ACTOR_TYPE }}
+          COMPATFORGE_RELEASE_CREATION_ACTOR_ID: ${{ vars.COMPATFORGE_RELEASE_CREATION_ACTOR_ID }}
         run: >-
           python -m compatforge_pipeline.release_acceptance
           --commit "$GITHUB_SHA"

@@ -57,6 +57,31 @@ def test_windows_parser_emits_only_safe_allowlisted_fields() -> None:
     assert "DO-NOT-LEAK" not in json.dumps(matches)
 
 
+def test_windows_collector_does_not_assign_readonly_pid(monkeypatch) -> None:
+    monkeypatch.setattr(diagnostics, "_powershell_executable", lambda: "powershell")
+    captured = {}
+
+    def fake_run(command, **kwargs):
+        captured["script"] = command[-1]
+        return {"devices": []}
+
+    monkeypatch.setattr(diagnostics, "_run_json", fake_run)
+    assert diagnostics._collect_windows_target("0403", "6001") == ([], 0)
+    assert "$pid =" not in captured["script"].lower()
+    assert "$usbProductId = '6001'" in captured["script"]
+
+
+def test_windows_10_collector_uses_release_not_kernel_version(monkeypatch) -> None:
+    monkeypatch.setattr(diagnostics, "_powershell_executable", lambda: "powershell")
+    monkeypatch.setattr(diagnostics, "_run_json", lambda *args, **kwargs: {
+        "manufacturer": "Acme", "model": "Host A", "os_caption": "Microsoft Windows 10 Pro",
+        "os_version": "10.0.19045", "os_build": "19045",
+    })
+    platform_record, _, _ = diagnostics._collect_windows_platform_host()
+    assert platform_record["os_version"] == "10"
+    assert platform_record["os_build"] == "19045"
+
+
 def test_macos_parser_drops_serial_and_unrelated_devices() -> None:
     payload = {
         "SPUSBDataType": [

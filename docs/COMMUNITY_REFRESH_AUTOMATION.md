@@ -48,7 +48,7 @@ Create a dedicated Auth user for automation and store only that user's login cre
 
 ## GitHub Actions configuration
 
-The `.github/workflows/community-refresh.yml` workflow runs weekly and can also be dispatched manually. It is a no-op until all required secrets exist:
+The `.github/workflows/community-refresh.yml` workflow runs weekly and can also be dispatched manually. It fails visibly until all required secrets exist; this is an operational signal, not a request to enable the public contribution feature prematurely:
 
 - `COMPATFORGE_SUPABASE_URL`;
 - `COMPATFORGE_SUPABASE_PUBLISHABLE_KEY`;
@@ -75,6 +75,10 @@ The workflow force-updates only `automation/community-refresh` from the latest c
 If a candidate needs a semantic correction, it no longer matches the immutable accepted hash and must go back through a new moderation decision rather than being hand-edited in the refresh PR.
 
 If an accepted candidate is already present byte-for-byte on `main` but still lacks a Supabase publication receipt, the workflow creates no duplicate PR. It reports the candidate as already present so an admin can complete the existing Phase 6C receipt step.
+
+The same run closes an obsolete bot-owned review PR when no accepted unpublished candidate requires a change. A candidate rejected after a PR was prepared must never be merged from stale branch contents; reviewers should verify current database approval again immediately before merge. The bot branch remains available for audit. This scheduled reconciliation narrows the stale-PR window but does not replace a required approval check at merge time.
+
+The workflow regenerates both the web evidence index and the packaged CLI snapshot for each prepared candidate; normal CI verifies that they match the reviewed source corpus.
 
 ## Local/offline preparation
 

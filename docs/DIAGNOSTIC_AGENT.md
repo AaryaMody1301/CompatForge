@@ -59,7 +59,7 @@ The Python package and standalone executable bundle:
 
 CI requires the packaged schema copies to match the public `schemas/` directory exactly and verifies that the packaged local snapshot matches reviewed repository evidence. This allows a frozen binary to work without a source checkout.
 
-Every local explanation includes the packaged snapshot SHA-256 and record counts. A released CLI can therefore lag the website without hiding which reviewed snapshot it used.
+Every local explanation includes the packaged snapshot SHA-256, evidence as-of timestamp, record counts, and dated evidence sources. A released CLI can therefore lag the website without hiding which reviewed snapshot it used.
 
 ## Local explanation semantics
 
@@ -99,7 +99,7 @@ See [`CLI_RELEASE.md`](CLI_RELEASE.md) for target assets, checksum/attestation v
 
 - direct-versus-hub classification remains reliable only on Linux; Windows/macOS emit `unspecified`;
 - macOS driver-version collection remains intentionally unavailable;
-- collected driver metadata is context-only and does not participate in resolver matching;
+- an unambiguous collected driver name/version participates in resolver matching; ambiguous or missing driver metadata remains context-only and cannot establish an exact driver match;
 - Phase 5C provenance attestations are not Apple notarization or Windows Authenticode;
 - the contribution handoff is local context only; no submission/upload path exists in Phase 5.
 

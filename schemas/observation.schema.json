@@ -73,7 +73,7 @@
       "required": ["source_type", "source_url", "source_title"],
       "properties": {
         "source_type": {"enum": ["vendor_documentation", "independent_reproduction", "diagnostic_report", "issue_report", "community_report"]},
-        "source_url": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https://[^/?#]+"},
         "source_title": {"type": "string", "minLength": 1, "maxLength": 300},
         "source_excerpt": {"type": "string", "maxLength": 1000}
       }

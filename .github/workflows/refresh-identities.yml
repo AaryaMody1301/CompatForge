@@ -112,7 +112,9 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Catalog drift was detected, but COMPATFORGE_REFRESH_GITHUB_TOKEN is not configured; candidate artifact only."               >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Catalog drift detected but COMPATFORGE_REFRESH_GITHUB_TOKEN is missing. Candidate artifact uploaded; no PR was created."
+            echo "Catalog drift detected, but COMPATFORGE_REFRESH_GITHUB_TOKEN is missing; candidate artifact only." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - name: Render refresh pull request body

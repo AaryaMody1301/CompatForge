@@ -50,6 +50,16 @@ def _connection_paths(manifest: dict[str, Any]) -> list[str]:
 def _query_for_path(manifest: dict[str, Any], connection_path: str) -> CompatibilityQuery:
     host = manifest["host"]
     platform = manifest["platform"]
+    matching_drivers = {
+        (driver.get("name"), driver.get("version"))
+        for match in manifest["target"].get("matches", [])
+        if match.get("connection_path", "unspecified") == connection_path
+        for driver in match.get("drivers", [])
+        if driver.get("name") and driver.get("version")
+    }
+    driver_name, driver_version = (
+        next(iter(matching_drivers)) if len(matching_drivers) == 1 else (None, None)
+    )
     return CompatibilityQuery(
         device_id=manifest["target"]["requested_device_id"],
         host_manufacturer=str(host.get("manufacturer") or "unknown"),
@@ -57,7 +67,10 @@ def _query_for_path(manifest: dict[str, Any], connection_path: str) -> Compatibi
         architecture=platform["architecture"],
         os_family=platform["os_family"],
         os_version=platform["os_version"],
+        os_build=platform.get("os_build"),
         connection_path=(connection_path,),
+        driver_name=driver_name,
+        driver_version=driver_version,
     )
 
 
@@ -78,6 +91,7 @@ def _evidence_sources(snapshot: dict[str, Any], result: dict[str, Any]) -> list[
                     "source_url": source["source_url"],
                     "source_title": source["source_title"],
                     "limitations": record["limitations"],
+                    "evidence_date": record["observed_at"],
                 }
             )
 
@@ -93,6 +107,7 @@ def _evidence_sources(snapshot: dict[str, Any], result: dict[str, Any]) -> list[
                     "source_url": source["source_url"],
                     "source_title": source["source_title"],
                     "limitations": record["limitations"],
+                    "evidence_date": record["reviewed_at"],
                 }
             )
 
@@ -125,8 +140,8 @@ def explain_diagnostic(
     limitations = {
         "The packaged local snapshot can lag the public website until the CLI is updated.",
         (
-            "Collected driver metadata is context-only in Phase 5B and does not alter "
-            "resolver matching."
+            "A collected driver is matched only when name and version are unambiguous; "
+            "missing evidence driver metadata cannot prove an exact match."
         ),
     }
     if not manifest["host"].get("manufacturer") or not manifest["host"].get("model"):
@@ -166,6 +181,7 @@ def explain_diagnostic(
                     "claim_state": resolved["claim_state"],
                     "specificity": resolved["specificity"],
                     "is_relaxed": resolved["is_relaxed"],
+                    "unchecked_dimensions": resolved["unchecked_dimensions"],
                     "observation_ids": resolved["observation_ids"],
                     "conditions": resolved["conditions"],
                     "support": resolved["support"],
@@ -181,6 +197,7 @@ def explain_diagnostic(
         "status": status,
         "snapshot": {
             "format_version": local_snapshot["format_version"],
+            "as_of": local_snapshot["as_of"],
             "sha256": snapshot_sha256(local_snapshot),
             "observation_count": local_snapshot["observation_count"],
             "support_statement_count": local_snapshot["support_statement_count"],

@@ -124,7 +124,7 @@ The resolver returns separate observed-compatibility and vendor-support states.
 7. Provenance and licensing are release requirements.
 8. Diagnostic collection is inspectable and privacy-minimized.
 9. Database acceptance and public evidence publication are separate actions.
-10. Release artifacts are deterministic, hashed, and verified before publication.
+10. Reviewed data snapshots are checked for deterministic output. Release archives normalize packaging metadata, are hashed and verified before publication; byte-identical output from two independent web builds is not yet an established guarantee.
 
 ## License
 

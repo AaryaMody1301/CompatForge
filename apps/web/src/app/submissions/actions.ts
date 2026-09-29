@@ -25,10 +25,15 @@ function errorCode(error: unknown) {
   return "submit_failed";
 }
 
-export async function submitCommunityEvidence(formData: FormData) {
+export type SubmissionActionState = { error: string | null };
+
+export async function submitCommunityEvidence(
+  _previous: SubmissionActionState,
+  formData: FormData,
+): Promise<SubmissionActionState> {
   const supabase = await createServerSupabaseClient();
   if (!supabase) {
-    redirect("/submissions/new?error=unconfigured");
+    return { error: "unconfigured" };
   }
 
   const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -40,12 +45,12 @@ export async function submitCommunityEvidence(formData: FormData) {
   try {
     submission = parseCommunitySubmission(formData);
   } catch (error) {
-    redirect(`/submissions/new?error=${encodeURIComponent(errorCode(error))}`);
+    return { error: errorCode(error) };
   }
 
   const { data, error } = await supabase.rpc("submit_community_evidence", { submission });
   if (error) {
-    redirect(`/submissions/new?error=${encodeURIComponent(errorCode(error))}`);
+    return { error: errorCode(error) };
   }
 
   revalidatePath("/submissions");

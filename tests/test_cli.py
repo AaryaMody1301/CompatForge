@@ -16,6 +16,16 @@ def test_unified_cli_reports_release_version(capsys) -> None:
     assert "0.3.0rc1" in capsys.readouterr().out
 
 
+def test_unified_cli_snapshot_info_reports_evidence_as_of(capsys) -> None:
+    from compatforge_pipeline.cli import main
+
+    assert main(["snapshot-info"]) == 0
+    snapshot = json.loads(capsys.readouterr().out)
+
+    assert snapshot["as_of"]
+    assert snapshot["observation_count"] >= 0
+
+
 def test_unified_cli_prepares_approved_local_handoff(tmp_path: Path) -> None:
     from compatforge_pipeline.cli import main
 

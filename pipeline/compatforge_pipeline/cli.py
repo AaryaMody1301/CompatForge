@@ -87,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
                 json.dumps(
                     {
                         "format_version": snapshot["format_version"],
+                        "as_of": snapshot["as_of"],
                         "observation_count": snapshot["observation_count"],
                         "support_statement_count": snapshot["support_statement_count"],
                         "sha256": snapshot_sha256(snapshot),

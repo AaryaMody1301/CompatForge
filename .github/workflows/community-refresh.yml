@@ -46,8 +46,9 @@ jobs:
           done
           echo "ready=$ready" >> "$GITHUB_OUTPUT"
           if [ "$ready" != "true" ]; then
-            echo "Community refresh is not configured; no repository write was attempted." \
-              >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Community refresh is not configured. Set the dedicated Supabase and GitHub refresh credentials before scheduling publication."
+            echo "Community refresh is not configured; no repository write was attempted." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - name: Set up Python
@@ -96,6 +97,23 @@ jobs:
           echo "Already present and awaiting publication receipt: ${{ steps.prepare.outputs.already_present }}" \
             >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Close obsolete bot review PR
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added == '0'
+        env:
+          GH_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          existing_pr="$(
+            gh pr list --head automation/community-refresh --base main \
+              --state open --json number --jq '.[0].number // empty'
+          )"
+          if [ -n "$existing_pr" ]; then
+            gh pr close "$existing_pr" --comment \
+              "No currently accepted, unpublished candidates need this PR. Closing stale bot review; approval must be checked again before any future publication."
+            echo "Closed obsolete refresh PR #$existing_pr; the bot branch was left intact for audit." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Verify exact candidate bytes and contracts
         if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
         run: |
@@ -117,6 +135,17 @@ jobs:
           npm run generate:evidence-index
           npm run check:evidence-index
 
+      - name: Update packaged CLI evidence snapshot
+        if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
+        run: |
+          compatforge-snapshot build \
+            --observations data/evidence/observations \
+            --support data/evidence/vendor \
+            --output pipeline/compatforge_pipeline/resources/local_snapshot.json
+          compatforge-snapshot verify \
+            --observations data/evidence/observations \
+            --support data/evidence/vendor
+
       - name: Render pull request body
         if: steps.config.outputs.ready == 'true' && steps.prepare.outputs.added != '0'
         run: |
@@ -137,7 +166,8 @@ jobs:
           git add \
             data/evidence/observations \
             data/evidence/community-refresh \
-            apps/web/src/lib/evidence.generated.ts
+            apps/web/src/lib/evidence.generated.ts \
+            pipeline/compatforge_pipeline/resources/local_snapshot.json
           git commit -m "Refresh accepted community evidence ${BATCH_ID:0:12}"
           gh auth setup-git
           git push --force origin HEAD:refs/heads/automation/community-refresh

@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import shutil
+import gzip
+import io
 import tarfile
 import zipfile
 from pathlib import Path
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,30 +17,57 @@ def package_release(binary: Path, asset_name: str, output_dir: Path) -> Path:
         raise FileNotFoundError(binary)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    stage = output_dir / "stage"
-    if stage.exists():
-        shutil.rmtree(stage)
-    stage.mkdir()
+    sources = sorted(
+        (
+            binary,
+            REPO_ROOT / "LICENSE",
+            REPO_ROOT / "THIRD_PARTY_NOTICES.md",
+            REPO_ROOT / "docs" / "CLI_RELEASE.md",
+        ),
+        key=lambda path: path.name,
+    )
+    if any(path.is_symlink() or not path.is_file() for path in sources):
+        raise ValueError("CLI release inputs must be ordinary files")
 
-    staged_binary = stage / binary.name
-    shutil.copy2(binary, staged_binary)
-    staged_binary.chmod(staged_binary.stat().st_mode | 0o111)
-    for source in (
-        REPO_ROOT / "LICENSE",
-        REPO_ROOT / "THIRD_PARTY_NOTICES.md",
-        REPO_ROOT / "docs" / "CLI_RELEASE.md",
-    ):
-        shutil.copy2(source, stage / source.name)
+    # The SBOM workflow scans the exact release inputs from this directory.
+    # Never remove a pre-existing directory or follow a staged symlink.
+    stage = output_dir / "stage"
+    if stage.is_symlink() or (stage.exists() and not stage.is_dir()):
+        raise ValueError("CLI release staging path must be a directory")
+    stage.mkdir(exist_ok=True)
+    expected = {path.name for path in sources}
+    if any(path.name not in expected or path.is_symlink() or not path.is_file()
+           for path in stage.iterdir()):
+        raise ValueError("CLI release staging directory contains unexpected files")
+    for path in sources:
+        staged = stage / path.name
+        staged.write_bytes(path.read_bytes())
+        staged.chmod(0o755 if path == binary else 0o644)
 
     archive = output_dir / asset_name
     if archive.suffix == ".zip":
         with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as handle:
-            for path in sorted(stage.iterdir(), key=lambda item: item.name):
-                handle.write(path, arcname=path.name)
+            for path in sources:
+                info = zipfile.ZipInfo(path.name, date_time=(1980, 1, 1, 0, 0, 0))
+                info.compress_type = zipfile.ZIP_DEFLATED
+                info.create_system = 3
+                info.external_attr = (0o100755 if path == binary else 0o100644) << 16
+                handle.writestr(info, path.read_bytes())
     elif archive.name.endswith(".tar.gz"):
-        with tarfile.open(archive, "w:gz") as handle:
-            for path in sorted(stage.iterdir(), key=lambda item: item.name):
-                handle.add(path, arcname=path.name)
+        with (
+            archive.open("wb") as raw,
+            gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed,
+            tarfile.open(fileobj=compressed, mode="w") as handle,
+        ):
+            for path in sources:
+                data = path.read_bytes()
+                info = tarfile.TarInfo(path.name)
+                info.size = len(data)
+                info.mode = 0o755 if path == binary else 0o644
+                info.mtime = 0
+                info.uid = info.gid = 0
+                info.uname = info.gname = ""
+                handle.addfile(info, io.BytesIO(data))
     else:
         raise ValueError("asset name must end in .zip or .tar.gz")
     return archive

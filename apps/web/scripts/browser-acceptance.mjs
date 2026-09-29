@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -17,6 +17,7 @@ const browserCandidates = process.env.CHROME_BIN
   : ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"];
 const fullCommitPattern = /^[0-9a-f]{40}$/;
 const localTarget = ["localhost", "127.0.0.1"].includes(new URL(baseUrl).hostname);
+const catalog = JSON.parse(readFileSync(path.resolve(process.cwd(), "../../data/catalog/usb-device-catalog.json"), "utf8"));
 const requiredSecurityHeaders = {
   "content-security-policy": ["base-uri 'self'", "frame-ancestors 'none'", "object-src 'none'"],
   "permissions-policy": ["camera=()", "microphone=()", "geolocation=()", "browsing-topics=()"],
@@ -50,7 +51,7 @@ async function waitForServer() {
   let lastError = "no response";
   for (let attempt = 0; attempt < 40; attempt += 1) {
     try {
-      const response = await fetch(`${baseUrl}/`, { redirect: "manual" });
+      const response = await fetchFresh(`${baseUrl}/`);
       if (response.status >= 200 && response.status < 500) return;
       lastError = `HTTP ${response.status}`;
     } catch (error) {
@@ -59,6 +60,20 @@ async function waitForServer() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error(`Browser acceptance target did not become reachable: ${lastError}`);
+}
+
+async function fetchFresh(url) {
+  // Chrome DOM capture can outlast the server's idle keep-alive window.
+  // Use a new connection and retry one transport-only failure for safe GETs.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await fetch(url, { redirect: "manual", headers: { Connection: "close" } });
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  }
+  throw new Error(`could not fetch ${url}`);
 }
 
 function dumpDom(url) {
@@ -143,7 +158,7 @@ const cases = [
       "Will this hardware actually work?",
       "Evidence-first compatibility",
       "Browse devices",
-      "20,537",
+      catalog.counts.devices.toLocaleString("en"),
       "property=\"og:title\"",
       "name=\"twitter:card\"",
       "rel=\"canonical\"",
@@ -157,7 +172,7 @@ const cases = [
       "Evidence-backed and curated developer hardware is shown first",
       "FTDI FT232 USB-Serial (UART) IC",
       "Saleae Logic Pro 8",
-      "usb.ids 2026.06.26",
+      `usb.ids ${catalog.source.version}`,
     ],
   },
   {
@@ -258,10 +273,17 @@ const cases = [
     status: 200,
     includes: [
       "Invalid configuration.",
-      "architecture is outside the available checker options.",
+      "architecture is invalid or outside the available checker options.",
       "No compatibility claim was generated.",
     ],
     excludes: ["<p class=\"eyebrow\">Result</p>", "works with conditions"],
+  },
+  {
+    name: "checker-invalid-version",
+    pathname: "/check?device=usb%3A0403%3A6001&os=windows&version=garbage&architecture=arm64&connection=unspecified",
+    status: 200,
+    includes: ["Invalid configuration.", "OS version is invalid", "No compatibility claim was generated."],
+    excludes: ["<p class=\"eyebrow\">Result</p>"],
   },
   {
     name: "coverage",
@@ -300,7 +322,14 @@ let failure = null;
 try {
   for (const testCase of cases) {
     const url = `${baseUrl}${testCase.pathname}`;
-    const response = await fetch(url, { redirect: "manual" });
+    let response;
+    try {
+      response = await fetchFresh(url);
+    } catch (error) {
+      const cause = error instanceof Error && error.cause instanceof Error
+        ? `: ${error.cause.message}` : "";
+      throw new Error(`${testCase.name}: could not fetch ${url}${cause}`);
+    }
     if (response.status !== testCase.status) {
       throw new Error(
         `${testCase.name}: expected HTTP ${testCase.status}, received ${response.status}`,
@@ -368,20 +397,20 @@ try {
     { name: "robots", pathname: "/robots.txt", contentType: "text/plain", includes: ["Sitemap:"] },
     { name: "sitemap", pathname: "/sitemap.xml", contentType: "application/xml", includes: ["/devices/ftdi-ft232r"] },
     { name: "manifest", pathname: "/manifest.webmanifest", contentType: "application/manifest+json", includes: ["CompatForge"] },
-    { name: "favicon", pathname: "/favicon.ico", contentType: "image/x-icon", includes: [] },
+    { name: "favicon", pathname: "/favicon.ico", contentTypes: ["image/x-icon", "image/vnd.microsoft.icon"], includes: [] },
     { name: "icon", pathname: "/icon.svg", contentType: "image/svg+xml", includes: [] },
     { name: "open-graph-image", pathname: "/opengraph-image", contentType: "image/png", includes: [] },
     { name: "twitter-image", pathname: "/twitter-image", contentType: "image/png", includes: [] },
   ];
   for (const route of metadataRoutes) {
-    const response = await fetch(`${baseUrl}${route.pathname}`, { redirect: "manual" });
+    const response = await fetchFresh(`${baseUrl}${route.pathname}`);
     if (response.status !== 200) {
       throw new Error(`${route.name}: expected HTTP 200, received ${response.status}`);
     }
     const contentType = response.headers.get("content-type") ?? "";
-    if (!contentType.includes(route.contentType)) {
+    if (!(route.contentTypes ?? [route.contentType]).some((type) => contentType.includes(type))) {
       throw new Error(
-        `${route.name}: expected content type containing ${route.contentType}, received ${contentType}`,
+        `${route.name}: expected content type ${JSON.stringify(route.contentTypes ?? [route.contentType])}, received ${contentType}`,
       );
     }
     const body = route.includes.length ? await response.text() : "";
@@ -390,6 +419,15 @@ try {
         throw new Error(`${route.name}: response did not contain ${JSON.stringify(expected)}`);
       }
     }
+  }
+
+  const suggestionsResponse = await fetchFresh(`${baseUrl}/api/devices/search?q=FT232R`);
+  if (suggestionsResponse.status !== 200) {
+    throw new Error(`device suggestions returned HTTP ${suggestionsResponse.status}`);
+  }
+  const suggestions = await suggestionsResponse.json();
+  if (!suggestions.devices?.some((device) => device.id === "usb:0403:6001")) {
+    throw new Error("device suggestions did not include the reviewed FT232R identity");
   }
 
   screenshot("home-desktop", `${baseUrl}/`, 1440, 1000);

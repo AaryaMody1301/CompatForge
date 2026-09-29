@@ -10,6 +10,7 @@ export const connectionKinds = [
   "usb_hub",
   "adapter",
   "dock",
+  "cable",
   "unspecified",
 ] as const;
 
@@ -66,7 +67,7 @@ export type Observation = {
     architecture: Architecture;
     operating_system: { family: OsFamily; version: string; build?: string };
   };
-  connection_path: { kind: ConnectionKind; notes?: string }[];
+  connection_path: { kind: ConnectionKind; manufacturer?: string; model?: string; notes?: string }[];
   driver?: { name: string; version?: string };
   software?: { name: string; version?: string };
   firmware_version?: string;
@@ -100,8 +101,17 @@ export type CompatibilityQuery = {
   osFamily: OsFamily;
   osVersion: string;
   connectionKind: ConnectionKind;
+  connectionPath?: readonly ConnectionKind[];
+  connectionPathComponents?: readonly { manufacturer?: string; model?: string }[];
   hostManufacturer?: string;
   hostModel?: string;
+  osBuild?: string;
+  driverName?: string;
+  driverVersion?: string;
+  softwareName?: string;
+  softwareVersion?: string;
+  firmwareVersion?: string;
+  usbGeneration?: string;
 };
 
 function normalize(value: string) {
@@ -140,8 +150,26 @@ function supportMatches(statement: SupportStatement, query: CompatibilityQuery) 
   if (!(["any", query.architecture] as string[]).includes(statement.scope.architecture)) return false;
   if (statement.scope.operating_system.family !== query.osFamily) return false;
   if (!versionMatches(statement, query.osVersion)) return false;
+  if (!metadataMatches(statement, query)) return false;
+  const minimumGeneration = statement.scope.connection.minimum_usb_generation;
+  if (minimumGeneration && query.usbGeneration) {
+    const minimum = numericVersion(minimumGeneration);
+    const current = numericVersion(query.usbGeneration);
+    if (!minimum || !current || compareVersions(current, minimum) < 0) return false;
+  }
   const connection = statement.scope.connection.kind;
-  return connection === "any_usb" || connection === query.connectionKind;
+  return connection === "any_usb" || (query.connectionPath ?? [query.connectionKind]).includes(connection);
+}
+
+function optionalMatches(expected: string | undefined, actual: string | undefined) {
+  return expected === undefined || (actual !== undefined && normalize(expected) === normalize(actual));
+}
+
+function metadataMatches(record: Pick<Observation | SupportStatement, "driver" | "software">, query: CompatibilityQuery) {
+  return optionalMatches(query.driverName, record.driver?.name)
+    && optionalMatches(query.driverVersion, record.driver?.version)
+    && optionalMatches(query.softwareName, record.software?.name)
+    && optionalMatches(query.softwareVersion, record.software?.version);
 }
 
 function supportSpecificity(statement: SupportStatement, query: CompatibilityQuery) {
@@ -178,11 +206,21 @@ function observationMatches(
   if (observation.device_id !== query.deviceId) return false;
   if (observation.host.architecture !== query.architecture) return false;
   if (observation.host.operating_system.family !== query.osFamily) return false;
-  if (
-    observation.connection_path.map((item) => item.kind).join(">") !== query.connectionKind
-  ) {
+  if (observation.connection_path.map((item) => item.kind).join(">")
+    !== (query.connectionPath ?? [query.connectionKind]).join(">")) {
     return false;
   }
+  if (query.connectionPathComponents) {
+    if (query.connectionPathComponents.length !== observation.connection_path.length) return false;
+    if (query.connectionPathComponents.some((component, index) =>
+      !optionalMatches(component.manufacturer, observation.connection_path[index].manufacturer)
+      || !optionalMatches(component.model, observation.connection_path[index].model))) {
+      return false;
+    }
+  }
+  if (!optionalMatches(query.osBuild, observation.host.operating_system.build)) return false;
+  if (!optionalMatches(query.firmwareVersion, observation.firmware_version)) return false;
+  if (!metadataMatches(observation, query)) return false;
   if (
     !options.ignoreOsVersion &&
     normalize(observation.host.operating_system.version) !== normalize(query.osVersion)
@@ -226,6 +264,19 @@ function uniqueConditions(records: readonly { conditions?: string[] }[]) {
 }
 
 export function resolveCompatibility(query: CompatibilityQuery) {
+  if (numericVersion(query.osVersion) === null) {
+    return {
+      claimState: "unknown" as ClaimState,
+      specificity: "none" as const,
+      observations: [] as Observation[],
+      observationConditions: [] as string[],
+      supportState: "unknown" as SupportState,
+      supportStatements: [] as SupportStatement[],
+      supportConditions: [] as string[],
+      uncheckedDimensions: [] as string[],
+      invalidFields: ["OS version"],
+    };
+  }
   const matchedObservations = bestObservations(query);
   const matchedSupport = bestSupport(query);
   return {
@@ -236,6 +287,17 @@ export function resolveCompatibility(query: CompatibilityQuery) {
     supportState: supportState(matchedSupport),
     supportStatements: matchedSupport,
     supportConditions: uniqueConditions(matchedSupport),
+    invalidFields: [] as string[],
+    uncheckedDimensions: [
+      !query.osBuild && "OS build", !query.driverName && "driver name",
+      !query.driverVersion && "driver version", !query.softwareName && "software name",
+      !query.softwareVersion && "software version", !query.firmwareVersion && "firmware",
+      // Observation records currently do not capture negotiated USB generation.
+      "USB generation",
+      (!query.connectionPathComponents
+        || query.connectionPathComponents.some((component) => !component.manufacturer || !component.model))
+        && "connection component identity",
+    ].filter((value): value is string => Boolean(value)),
   };
 }
 
@@ -270,6 +332,7 @@ export function formatConnection(value: ConnectionKind | "any_usb") {
     usb_hub: "USB hub",
     adapter: "Adapter",
     dock: "Dock",
+    cable: "USB cable",
     unspecified: "Unspecified path",
   }[value];
 }
@@ -286,4 +349,12 @@ export function formatDate(value: string) {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(value));
+}
+
+export function evidenceAge(value: string, now = new Date()) {
+  const days = Math.max(0, Math.floor((now.getTime() - Date.parse(value)) / 86_400_000));
+  return {
+    days,
+    status: days > 365 ? "stale" : days > 180 ? "aging" : "fresh",
+  } as const;
 }

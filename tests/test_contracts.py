@@ -35,3 +35,27 @@ def test_observation_rejects_non_https_evidence_url() -> None:
     document["evidence"]["source_url"] = "http://example.com/evidence"
     with pytest.raises(ContractValidationError, match="source_url"):
         validate_document(document)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("observed_at", "not-a-date"), ("recorded_at", "2026-09-28T12:00:00")],
+)
+def test_observation_rejects_invalid_date_time_formats(field: str, value: str) -> None:
+    document = load(ROOT / "data" / "fixtures" / "observation.synthetic.json")
+    document[field] = value
+
+    with pytest.raises(ContractValidationError, match=field):
+        validate_document(document)
+
+
+@pytest.mark.parametrize("value", [
+    "https://%", "https://", "https:///path", "https://?query", "https://#fragment",
+    "https://bad host.example/path",
+])
+def test_observation_rejects_malformed_source_urls(value: str) -> None:
+    document = load(ROOT / "data" / "fixtures" / "observation.synthetic.json")
+    document["evidence"]["source_url"] = value
+
+    with pytest.raises(ContractValidationError, match="source_url"):
+        validate_document(document)
