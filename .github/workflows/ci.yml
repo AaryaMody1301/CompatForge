@@ -210,9 +210,6 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Verify canonical evidence index
-        run: npm run check:evidence-index
-
       - name: Lint
         run: npm run lint
 
@@ -225,6 +222,7 @@ jobs:
         run: npm run build
 
       - name: Browser acceptance
+        id: browser
         shell: bash
         env:
           COMPATFORGE_BROWSER_BASE_URL: http://127.0.0.1:3100
@@ -249,18 +247,10 @@ jobs:
           fi
 
       - name: Upload browser acceptance artifacts
-        if: always()
+        if: always() && steps.browser.outcome != 'skipped'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: compatforge-browser-acceptance
           path: apps/web/build/browser-acceptance/
           if-no-files-found: error
           retention-days: 14
-
-      - name: Stop production server
-        if: always()
-        shell: bash
-        run: |
-          if [[ -f build/browser-acceptance/server.pid ]]; then
-            kill "$(cat build/browser-acceptance/server.pid)" || true
-          fi

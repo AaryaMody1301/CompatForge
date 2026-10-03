@@ -25,6 +25,8 @@ npm run build
 
 Pull requests also run browser acceptance, deterministic data builds, dependency audits, CodeQL, database/RLS tests, release-provenance verification, and six-platform frozen CLI builds.
 
+The web package scopes a `fast-glob` → `tinyglobby` override to `@next/eslint-plugin-next`. Next's root-directory discovery uses the compatible `globSync`/`onlyDirectories` API; `scripts/lint-glob.test.mjs` exercises that real caller. This removes the unpatched `braces` dependency (GHSA-vfj7-8cjw-p6xm) without disabling lint rules or audit findings. Remove the override when Next's plugin ships a safe dependency tree. Keep ESLint on 9 until `eslint-plugin-react` supports the next major, and keep `@types/node` on the Node 24 runtime major.
+
 ## Device identities
 
 The published USB registry is generated from the versioned upstream identity snapshot. Curated CompatForge metadata belongs in `data/catalog/curated-devices.json` and must use a canonical USB VID/PID that exists in the published registry. Curated metadata must not imply compatibility, and evidence does not require a curated metadata entry: reviewed evidence may target any identity in the published registry. If the repository has no reviewed support statement or observation for an identity, the product must continue to report compatibility as unknown.

@@ -14,6 +14,7 @@ concurrency:
 
 jobs:
   prepare:
+    if: github.event_name == 'workflow_dispatch' || vars.COMPATFORGE_COMMUNITY_REFRESH_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -34,13 +35,9 @@ jobs:
         shell: bash
         run: |
           ready=true
-          for value in \
-            "$SUPABASE_URL" \
-            "$SUPABASE_KEY" \
-            "$REFRESH_EMAIL" \
-            "$REFRESH_PASSWORD" \
-            "$REFRESH_GITHUB_TOKEN"; do
-            if [ -z "$value" ]; then
+          for name in SUPABASE_URL SUPABASE_KEY REFRESH_EMAIL REFRESH_PASSWORD REFRESH_GITHUB_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing community refresh configuration: $name"
               ready=false
             fi
           done

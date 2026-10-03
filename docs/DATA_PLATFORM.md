@@ -67,3 +67,7 @@ The released web product also includes `data/catalog/usb-device-catalog.json`, a
 ## Refresh policy
 
 The scheduled workflow checks the upstream USB ID Repository at most once per day, builds the analytical and compact web snapshots, and uploads the candidate artifacts. When the published web catalog differs, the workflow can use the existing scoped refresh credential to force-update a bot-owned refresh branch and create or update a review pull request. It never merges directly to `main`, and identity refreshes never create compatibility evidence.
+
+The default mode is explicitly **candidate only**: a successful run means an upstream candidate was built and uploaded, not that the published catalog was updated. Its summary reports catalog drift. Download the candidate artifact and review its catalog change before committing it through a normal PR.
+
+To automate review PR preparation, configure the dedicated `COMPATFORGE_REFRESH_GITHUB_TOKEN` described in [community refresh configuration](COMMUNITY_REFRESH_AUTOMATION.md), then set the repository Actions variable `COMPATFORGE_IDENTITY_REFRESH_MODE=review-pr`. A manual dispatch can also select `review-pr`. Missing credentials or an invalid mode fail before downloading/building data; publication never falls back to the built-in read-only token. Use `candidate` to return to artifact-only operation.

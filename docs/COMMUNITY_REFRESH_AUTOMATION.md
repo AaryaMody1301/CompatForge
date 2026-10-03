@@ -48,7 +48,7 @@ Create a dedicated Auth user for automation and store only that user's login cre
 
 ## GitHub Actions configuration
 
-The `.github/workflows/community-refresh.yml` workflow runs weekly and can also be dispatched manually. It fails visibly until all required secrets exist; this is an operational signal, not a request to enable the public contribution feature prematurely:
+The `.github/workflows/community-refresh.yml` workflow can be dispatched manually. Its weekly job is opt-in: set the repository Actions variable `COMPATFORGE_COMMUNITY_REFRESH_ENABLED=true` only after the hosted setup and a manual run succeed. Until then the scheduled job is skipped; that does not mean hosted publication is configured. Manual dispatch, and every enabled scheduled run, fail visibly if required configuration is missing:
 
 - `COMPATFORGE_SUPABASE_URL`;
 - `COMPATFORGE_SUPABASE_PUBLISHABLE_KEY`;
