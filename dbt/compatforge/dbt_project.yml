@@ -7,6 +7,9 @@ model-paths: ["models"]
 test-paths: ["tests"]
 clean-targets: ["target", "dbt_packages", "logs"]
 
+# Persist completed models before separate read-only snapshot export processes.
+on-run-end: ["checkpoint"]
+
 models:
   compatforge:
     staging:

@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Upload a candidate, or prepare a review PR using the dedicated credential
+        type: choice
+        options: [candidate, review-pr]
+        default: candidate
 
 permissions:
   contents: read
@@ -22,6 +28,32 @@ jobs:
         with:
           ref: main
           persist-credentials: false
+
+      - name: Check refresh mode and write configuration
+        id: config
+        env:
+          REFRESH_MODE: ${{ inputs.mode || vars.COMPATFORGE_IDENTITY_REFRESH_MODE || 'candidate' }}
+          REFRESH_GITHUB_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          case "$REFRESH_MODE" in
+            candidate)
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              echo "Identity refresh mode: candidate only. Catalog drift will be uploaded for review; no branch or PR will be written." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            review-pr)
+              if [ -z "$REFRESH_GITHUB_TOKEN" ]; then
+                echo "::error::Review PR mode requires COMPATFORGE_REFRESH_GITHUB_TOKEN."
+                exit 1
+              fi
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+              echo "Identity refresh mode: prepare a review PR when catalog drift is detected." >> "$GITHUB_STEP_SUMMARY"
+              ;;
+            *)
+              echo "::error::COMPATFORGE_IDENTITY_REFRESH_MODE must be candidate or review-pr."
+              exit 1
+              ;;
+          esac
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -100,22 +132,6 @@ jobs:
             build/live/public/
             data/catalog/usb-device-catalog.json
           retention-days: 14
-
-      - name: Check refresh write configuration
-        if: steps.drift.outputs.changed == 'true'
-        id: config
-        env:
-          REFRESH_GITHUB_TOKEN: ${{ secrets.COMPATFORGE_REFRESH_GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          if [ -n "$REFRESH_GITHUB_TOKEN" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::error::Catalog drift detected but COMPATFORGE_REFRESH_GITHUB_TOKEN is missing. Candidate artifact uploaded; no PR was created."
-            echo "Catalog drift detected, but COMPATFORGE_REFRESH_GITHUB_TOKEN is missing; candidate artifact only." >> "$GITHUB_STEP_SUMMARY"
-            exit 1
-          fi
 
       - name: Render refresh pull request body
         if: steps.drift.outputs.changed == 'true' && steps.config.outputs.ready == 'true'

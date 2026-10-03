@@ -29,6 +29,7 @@ htmlcov/
 dbt/compatforge/target/
 dbt/compatforge/logs/
 dbt/compatforge/dbt_packages/
+dbt/compatforge/.user.yml
 supabase/.temp/
 supabase/.branches/
 

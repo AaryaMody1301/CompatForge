@@ -27,7 +27,7 @@ The first `v1.0.0-rc.1` tag remains intentionally uncreated until the external r
 
 The web catalog publishes the complete versioned `usb.ids` product-identity snapshot separately from CompatForge compatibility evidence. Registry identities can be searched, opened, and checked, but they remain compatibility `UNKNOWN` until reviewed support statements or observations exist. Community submissions are exposed only when their hosted authentication and moderation configuration is explicitly enabled.
 
-`data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/curated-devices.json` is now only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes generate the full candidate catalog and prepare a review pull request when the upstream snapshot changes; they never create compatibility claims or merge directly to `main`.
+`data/catalog/usb-device-catalog.json` is the generated full identity snapshot. `data/catalog/curated-devices.json` is only a curated metadata overlay for devices with richer product descriptions or reviewed evidence. Scheduled identity refreshes upload a candidate catalog by default. Configured review-PR mode prepares a pull request when the upstream snapshot changes; neither mode creates compatibility claims or merges directly to `main`. See [refresh configuration](docs/DATA_PLATFORM.md#refresh-policy).
 
 ## Repository layout
 
